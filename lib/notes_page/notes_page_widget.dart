@@ -241,58 +241,16 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
               child: Column(
                 mainAxisSize: MainAxisSize.max,
                 children: [
-                  if (_loadingRecordings)
-                    Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text(
-                        'Loading recordings...',
-                        style: FlutterFlowTheme.of(context)
-                            .bodySmall
-                            .override(
-                              font: GoogleFonts.inter(
-                                fontWeight: FlutterFlowTheme.of(context)
-                                    .bodySmall
-                                    .fontWeight,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .bodySmall
-                                    .fontStyle,
-                              ),
-                              color:
-                                  FlutterFlowTheme.of(context).secondaryText,
-                              letterSpacing: 0.0,
-                            ),
-                      ),
-                    )
-                  else if (_recordings.isEmpty)
-                    Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text(
-                        'No recordings yet.',
-                        style: FlutterFlowTheme.of(context)
-                            .bodySmall
-                            .override(
-                              font: GoogleFonts.inter(
-                                fontWeight: FlutterFlowTheme.of(context)
-                                    .bodySmall
-                                    .fontWeight,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .bodySmall
-                                    .fontStyle,
-                              ),
-                              color:
-                                  FlutterFlowTheme.of(context).secondaryText,
-                              letterSpacing: 0.0,
-                            ),
-                      ),
-                    )
-                  else
+                  if (!_loadingRecordings && _recordings.isNotEmpty)
                     Column(
                       mainAxisSize: MainAxisSize.max,
                       children: _recordings
                           .map(_buildLectureCard)
                           .toList()
                           .divide(SizedBox(height: 12.0)),
-                    ),
+                    )
+                  else
+                    SizedBox.shrink(),
                 ].divide(SizedBox(height: 8.0)),
               ),
             ),
