@@ -72,7 +72,13 @@ class RecordingStore {
       try {
         final data = jsonDecode(await file.readAsString());
         if (data is Map<String, dynamic>) {
-          entries.add(RecordingEntry.fromJson(data));
+          final entry = RecordingEntry.fromJson(data);
+          final audioExists = File(entry.audioPath).existsSync();
+          final notesExists = File(entry.notesPath).existsSync();
+          if (!audioExists && !notesExists) {
+            continue;
+          }
+          entries.add(entry);
         }
       } catch (_) {
         // Skip malformed entries.
