@@ -233,64 +233,94 @@ class _HomeWidgetState extends State<HomeWidget> {
     });
   }
 
+  void _openRecording(RecordingEntry entry) {
+    context.pushNamed(
+      NotesDetailPageWidget.routeName,
+      queryParameters: {
+        'audioPath': serializeParam(entry.audioPath, ParamType.String),
+        'notesPath': serializeParam(entry.notesPath, ParamType.String),
+        'title': serializeParam(entry.title, ParamType.String),
+        'createdAt': serializeParam(entry.createdAt, ParamType.DateTime),
+        'durationSeconds':
+            serializeParam(entry.duration.inSeconds, ParamType.int),
+      }.withoutNulls,
+    );
+  }
+
   Widget _buildLectureCard(RecordingEntry entry) {
     return Padding(
       padding: EdgeInsets.all(16.0),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: FlutterFlowTheme.of(context).secondaryBackground,
-          borderRadius: BorderRadius.circular(12.0),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(12.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Container(
-                width: 48.0,
-                height: 48.0,
-                decoration: BoxDecoration(
-                  color: FlutterFlowTheme.of(context).accent1,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Align(
-                  alignment: AlignmentDirectional(0.0, 0.0),
-                  child: Icon(
-                    Icons.play_arrow_rounded,
-                    color: FlutterFlowTheme.of(context).primary,
-                    size: 24.0,
+      child: InkWell(
+        splashColor: Colors.transparent,
+        focusColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        onTap: () => _openRecording(entry),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: FlutterFlowTheme.of(context).secondaryBackground,
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(12.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Container(
+                  width: 48.0,
+                  height: 48.0,
+                  decoration: BoxDecoration(
+                    color: FlutterFlowTheme.of(context).accent1,
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  child: Align(
+                    alignment: AlignmentDirectional(0.0, 0.0),
+                    child: Icon(
+                      Icons.play_arrow_rounded,
+                      color: FlutterFlowTheme.of(context).primary,
+                      size: 24.0,
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.title,
-                      style: FlutterFlowTheme.of(context).titleMedium.override(
-                            font: GoogleFonts.interTight(
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.title,
+                        style: FlutterFlowTheme.of(context).titleMedium.override(
+                              font: GoogleFonts.interTight(
+                                fontWeight: FontWeight.w600,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .titleMedium
+                                    .fontStyle,
+                              ),
+                              letterSpacing: 0.0,
                               fontWeight: FontWeight.w600,
                               fontStyle: FlutterFlowTheme.of(context)
                                   .titleMedium
                                   .fontStyle,
                             ),
-                            letterSpacing: 0.0,
-                            fontWeight: FontWeight.w600,
-                            fontStyle: FlutterFlowTheme.of(context)
-                                .titleMedium
-                                .fontStyle,
-                          ),
-                    ),
-                    Padding(
-                      padding:
-                          EdgeInsetsDirectional.fromSTEB(0.0, 4.0, 0.0, 0.0),
-                      child: Text(
-                        '${dateTimeFormat('relative', entry.createdAt)} • ${_formatDuration(entry.duration)}',
-                        style: FlutterFlowTheme.of(context).bodySmall.override(
-                              font: GoogleFonts.inter(
+                      ),
+                      Padding(
+                        padding:
+                            EdgeInsetsDirectional.fromSTEB(0.0, 4.0, 0.0, 0.0),
+                        child: Text(
+                          '${dateTimeFormat('relative', entry.createdAt)} • ${_formatDuration(entry.duration)}',
+                          style: FlutterFlowTheme.of(context).bodySmall.override(
+                                font: GoogleFonts.inter(
+                                  fontWeight: FlutterFlowTheme.of(context)
+                                      .bodySmall
+                                      .fontWeight,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .bodySmall
+                                      .fontStyle,
+                                ),
+                                color:
+                                    FlutterFlowTheme.of(context).secondaryText,
+                                letterSpacing: 0.0,
                                 fontWeight: FlutterFlowTheme.of(context)
                                     .bodySmall
                                     .fontWeight,
@@ -298,27 +328,18 @@ class _HomeWidgetState extends State<HomeWidget> {
                                     .bodySmall
                                     .fontStyle,
                               ),
-                              color:
-                                  FlutterFlowTheme.of(context).secondaryText,
-                              letterSpacing: 0.0,
-                              fontWeight: FlutterFlowTheme.of(context)
-                                  .bodySmall
-                                  .fontWeight,
-                              fontStyle: FlutterFlowTheme.of(context)
-                                  .bodySmall
-                                  .fontStyle,
-                            ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.more_vert_rounded,
-                color: FlutterFlowTheme.of(context).secondaryText,
-                size: 20.0,
-              ),
-            ].divide(SizedBox(width: 12.0)),
+                Icon(
+                  Icons.more_vert_rounded,
+                  color: FlutterFlowTheme.of(context).secondaryText,
+                  size: 20.0,
+                ),
+              ].divide(SizedBox(width: 12.0)),
+            ),
           ),
         ),
       ),

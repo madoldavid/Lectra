@@ -111,6 +111,18 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => NotesPageWidget(),
         ),
         FFRoute(
+          name: NotesDetailPageWidget.routeName,
+          path: NotesDetailPageWidget.routePath,
+          builder: (context, params) => NotesDetailPageWidget(
+            audioPath: params.getParam('audioPath', ParamType.String, false),
+            notesPath: params.getParam('notesPath', ParamType.String, false),
+            title: params.getParam('title', ParamType.String, false),
+            createdAt: params.getParam('createdAt', ParamType.DateTime, false),
+            durationSeconds:
+                params.getParam('durationSeconds', ParamType.int, false),
+          ),
+        ),
+        FFRoute(
           name: NotificationPageWidget.routeName,
           path: NotificationPageWidget.routePath,
           builder: (context, params) => NotificationPageWidget(),
