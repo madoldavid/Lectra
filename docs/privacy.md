@@ -49,7 +49,7 @@ We use standard security measures to protect your account information and authen
 Lectra is not intended for children under 13.
 
 ## Contact
-For questions or deletion requests, contact: **[REPLACE_WITH_SUPPORT_EMAIL]**
+For questions or deletion requests, contact: **goydave45@gmail.com**
 
 ---
 
