@@ -9,6 +9,9 @@ import 'package:provider/provider.dart';
 import 'setting_page_model.dart';
 export 'setting_page_model.dart';
 
+const String kPrivacyPolicyUrl =
+    'https://madoldavid.github.io/Lectra/privacy';
+
 /// Create a pageProfile and settings screen.
 ///
 /// User info at top.
@@ -413,7 +416,14 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                   Padding(
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         16.0, 16.0, 16.0, 16.0),
-                                    child: Container(
+                                    child: InkWell(
+                                      splashColor: Colors.transparent,
+                                      focusColor: Colors.transparent,
+                                      hoverColor: Colors.transparent,
+                                      highlightColor: Colors.transparent,
+                                      onTap: () async {
+                                        await launchURL(kPrivacyPolicyUrl);
+                                      },
                                       child: Row(
                                         mainAxisSize: MainAxisSize.max,
                                         mainAxisAlignment:
