@@ -1,3 +1,9 @@
+---
+layout: default
+title: Privacy Policy
+permalink: /privacy
+---
+
 # Privacy Policy
 
 **Effective date:** February 10, 2026
