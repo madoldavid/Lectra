@@ -18,6 +18,16 @@ class LectraSupabaseUser extends BaseAuthUser {
   AuthUserInfo get authUserInfo => AuthUserInfo(
         uid: user?.id,
         email: user?.email,
+        displayName: _metadataString(user, const [
+          'display_name',
+          'full_name',
+          'name',
+        ]),
+        photoUrl: _metadataString(user, const [
+          'avatar_url',
+          'picture',
+          'photo_url',
+        ]),
         phoneNumber: user?.phone,
       );
 
@@ -62,6 +72,20 @@ class LectraSupabaseUser extends BaseAuthUser {
     await SupaFlow.client.auth
         .refreshSession()
         .then((_) => user = SupaFlow.client.auth.currentUser);
+  }
+
+  static String? _metadataString(User? user, List<String> keys) {
+    final metadata = user?.userMetadata;
+    if (metadata == null) {
+      return null;
+    }
+    for (final key in keys) {
+      final value = metadata[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return null;
   }
 }
 
