@@ -1,3 +1,6 @@
+
+import 'dart:async';
+
 import 'package:rxdart/rxdart.dart';
 
 import '/backend/supabase/supabase.dart';
@@ -8,6 +11,7 @@ export '../base_auth_user_provider.dart';
 class LectraSupabaseUser extends BaseAuthUser {
   LectraSupabaseUser(this.user);
   User? user;
+  @override
   bool get loggedIn => user != null;
 
   @override
@@ -18,8 +22,7 @@ class LectraSupabaseUser extends BaseAuthUser {
       );
 
   @override
-  Future? delete() =>
-      throw UnsupportedError('The delete user operation is not yet supported.');
+  Future? delete() => SupaFlow.client.auth.admin.deleteUser(user!.id);
 
   @override
   Future? updateEmail(String email) async {
@@ -41,8 +44,8 @@ class LectraSupabaseUser extends BaseAuthUser {
   }
 
   @override
-  Future? sendEmailVerification() => throw UnsupportedError(
-      'The send email verification operation is not yet supported.');
+  Future? sendEmailVerification() => SupaFlow.client.auth
+      .resend(type: OtpType.signup, email: user!.email!);
 
   @override
   bool get emailVerified {
@@ -63,21 +66,15 @@ class LectraSupabaseUser extends BaseAuthUser {
 }
 
 /// Generates a stream of the authenticated user.
-/// [SupaFlow.client.auth.onAuthStateChange] does not yield any values until the
-/// user is already authenticated. So we add a default null user to the stream,
-/// if we need to interact with the [currentUser] before logging in.
 Stream<BaseAuthUser> lectraSupabaseUserStream() {
-  final supabaseAuthStream = SupaFlow.client.auth.onAuthStateChange.debounce(
-      (authState) => authState.event == AuthChangeEvent.tokenRefreshed
-          ? TimerStream(authState, Duration(seconds: 1))
-          : Stream.value(authState));
-  return (!loggedIn
-          ? Stream<AuthState?>.value(null).concatWith([supabaseAuthStream])
-          : supabaseAuthStream)
-      .map<BaseAuthUser>(
+  final supabaseAuthStream = SupaFlow.client.auth.onAuthStateChange.map(
     (authState) {
-      currentUser = LectraSupabaseUser(authState?.session?.user);
+      currentUser = LectraSupabaseUser(authState.session?.user);
       return currentUser!;
     },
   );
+  return MergeStream([
+    Stream.value(LectraSupabaseUser(SupaFlow.client.auth.currentUser)),
+    supabaseAuthStream,
+  ]);
 }

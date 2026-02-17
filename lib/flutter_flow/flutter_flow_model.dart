@@ -2,7 +2,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
-import 'flutter_flow_util.dart';
 
 Widget wrapWithModel<T extends FlutterFlowModel>({
   required T model,
@@ -44,7 +43,9 @@ abstract class FlutterFlowModel<W extends Widget> {
       initState(context);
       _isInitialized = true;
     }
-    if (context.widget is W) _widget = context.widget as W;
+    if (context.widget is W) {
+      _widget = context.widget as W;
+    }
     _context = context;
   }
 
@@ -52,9 +53,6 @@ abstract class FlutterFlowModel<W extends Widget> {
   // parameters of the widget, for example.
   W? _widget;
   W? get widget => _widget;
-  void set widget(W? newWidget) {
-    _widget = newWidget;
-  }
 
   // The context associated with this model.
   BuildContext? _context;
@@ -75,17 +73,18 @@ abstract class FlutterFlowModel<W extends Widget> {
   }
 
   // Whether to update the containing page / component on updates.
-  bool updateOnChange = false;
+  bool _updateOnChange = false;
   // Function to call when the model receives an update.
   VoidCallback _updateCallback = () {};
-  void onUpdate() => updateOnChange ? _updateCallback() : () {};
-  FlutterFlowModel setOnUpdate({
+  void onUpdate() => _updateOnChange ? _updateCallback() : () {};
+  void setOnUpdate({
     bool updateOnChange = false,
     required VoidCallback onUpdate,
-  }) =>
-      this
-        .._updateCallback = onUpdate
-        ..updateOnChange = updateOnChange;
+  }) {
+    _updateCallback = onUpdate;
+    _updateOnChange = updateOnChange;
+  }
+
   // Update the containing page when this model received an update.
   void updatePage(VoidCallback callback) {
     callback();
@@ -130,7 +129,11 @@ class FlutterFlowDynamicModels<T extends FlutterFlowModel> {
     return model != null ? getValue(model) : null;
   }
 
-  void dispose() => _childrenModels.values.forEach((model) => model.dispose());
+  void dispose() {
+    for (var model in _childrenModels.values) {
+      model.dispose();
+    }
+  }
 
   void _updateActiveKeys(String uniqueKey) {
     final shouldResetActiveKeys = _activeKeys == null;
@@ -157,13 +160,17 @@ class FlutterFlowDynamicModels<T extends FlutterFlowModel> {
 
 T? _getDefaultValue<T>() {
   switch (T) {
-    case int:
+    // ignore: pattern_never_matches_value_type
+    case int _:
       return 0 as T;
-    case double:
+    // ignore: pattern_never_matches_value_type
+    case double _:
       return 0.0 as T;
-    case String:
+    // ignore: pattern_never_matches_value_type
+    case String _:
       return '' as T;
-    case bool:
+    // ignore: pattern_never_matches_value_type
+    case bool _:
       return false as T;
     default:
       return null as T;

@@ -1,8 +1,8 @@
-import 'dart:async';
-
-import 'package:app_links/app_links.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:lectra/services/gemini_service.dart';
+import 'package:lectra/env.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -13,8 +13,6 @@ import 'auth/supabase_auth/auth_util.dart';
 import '/backend/supabase/supabase.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import 'flutter_flow/flutter_flow_util.dart';
-import 'flutter_flow/nav/nav.dart';
-import 'index.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,14 +23,27 @@ void main() async {
 
   await FlutterFlowTheme.initialize();
 
-  runApp(MyApp());
+  final appState = AppStateNotifier.instance;
+  await appState.initializePersistedState();
+
+  final geminiService = GeminiService(geminiApiKey);
+
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (context) => appState),
+      Provider<GeminiService>.value(value: geminiService),
+    ],
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
   // This widget is the root of your application.
   @override
   State<MyApp> createState() => _MyAppState();
 
+  // ignore: library_private_types_in_public_api
   static _MyAppState of(BuildContext context) =>
       context.findAncestorStateOfType<_MyAppState>()!;
 }
@@ -42,21 +53,7 @@ class _MyAppState extends State<MyApp> {
 
   late AppStateNotifier _appStateNotifier;
   late GoRouter _router;
-  final AppLinks _appLinks = AppLinks();
-  StreamSubscription<Uri>? _appLinksSubscription;
-  String getRoute([RouteMatch? routeMatch]) {
-    final RouteMatch lastMatch =
-        routeMatch ?? _router.routerDelegate.currentConfiguration.last;
-    final RouteMatchList matchList = lastMatch is ImperativeRouteMatch
-        ? lastMatch.matches
-        : _router.routerDelegate.currentConfiguration;
-    return matchList.uri.toString();
-  }
 
-  List<String> getRouteStack() =>
-      _router.routerDelegate.currentConfiguration.matches
-          .map((e) => getRoute(e))
-          .toList();
   late Stream<BaseAuthUser> userStream;
 
   @override
@@ -70,46 +67,14 @@ class _MyAppState extends State<MyApp> {
         _appStateNotifier.update(user);
       });
     jwtTokenStream.listen((_) {});
-    _initDeepLinks();
     Future.delayed(
-      Duration(milliseconds: 1000),
+      const Duration(milliseconds: 1000),
       () => _appStateNotifier.stopShowingSplashImage(),
     );
   }
 
-  Future<void> _initDeepLinks() async {
-    if (isWeb) {
-      return;
-    }
-    try {
-      final initialUri = await _appLinks.getInitialLink();
-      if (initialUri != null) {
-        await _handleAuthRedirect(initialUri);
-      }
-      _appLinksSubscription = _appLinks.uriLinkStream.listen(
-        (uri) => _handleAuthRedirect(uri),
-        onError: (_) {},
-      );
-    } catch (_) {}
-  }
-
-  Future<void> _handleAuthRedirect(Uri uri) async {
-    final hasAuthParams = uri.queryParameters.containsKey('code') ||
-        uri.queryParameters.containsKey('access_token') ||
-        uri.queryParameters.containsKey('refresh_token') ||
-        uri.fragment.contains('access_token') ||
-        uri.fragment.contains('refresh_token');
-    if (!hasAuthParams) {
-      return;
-    }
-    try {
-      await SupaFlow.client.auth.getSessionFromUrl(uri);
-    } catch (_) {}
-  }
-
   @override
   void dispose() {
-    _appLinksSubscription?.cancel();
     super.dispose();
   }
 
@@ -118,12 +83,26 @@ class _MyAppState extends State<MyApp> {
         FlutterFlowTheme.saveThemeMode(mode);
       });
 
+  String getRoute([RouteMatch? routeMatch]) {
+    final RouteMatch lastMatch =
+        routeMatch ?? _router.routerDelegate.currentConfiguration.last;
+    final RouteMatchList matchList = lastMatch is ImperativeRouteMatch
+        ? lastMatch.matches
+        : _router.routerDelegate.currentConfiguration;
+    return matchList.uri.toString();
+  }
+
+  List<String> getRouteStack() =>
+      _router.routerDelegate.currentConfiguration.matches
+          .map((e) => getRoute(e as RouteMatch))
+          .toList();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Lectra',
-      localizationsDelegates: [
+      localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

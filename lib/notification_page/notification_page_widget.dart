@@ -1,10 +1,7 @@
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'notification_page_model.dart';
 export 'notification_page_model.dart';
 
@@ -45,12 +42,12 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: Color(0xFFF1F4F8),
+        backgroundColor: const Color(0xFFF1F4F8),
         appBar: AppBar(
           backgroundColor: Colors.white,
           automaticallyImplyLeading: false,
           title: Align(
-            alignment: AlignmentDirectional(0.0, 0.0),
+            alignment: const AlignmentDirectional(0.0, 0.0),
             child: Text(
               'Notifications',
               style: FlutterFlowTheme.of(context).headlineMedium.override(
@@ -59,7 +56,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                       fontStyle:
                           FlutterFlowTheme.of(context).headlineMedium.fontStyle,
                     ),
-                    color: Color(0xFF14181B),
+                    color: const Color(0xFF14181B),
                     fontSize: 24.0,
                     letterSpacing: 0.0,
                     fontWeight: FontWeight.normal,
@@ -68,7 +65,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                   ),
             ),
           ),
-          actions: [],
+          actions: const [],
           centerTitle: false,
           elevation: 0.0,
         ),
@@ -77,12 +74,12 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
           scrollDirection: Axis.vertical,
           children: [
             Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
+              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       blurRadius: 0.0,
                       color: Color(0xFFE0E3E7),
@@ -96,7 +93,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                   shape: BoxShape.rectangle,
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
                     children: [
@@ -104,13 +101,13 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                         width: 4.0,
                         height: 50.0,
                         decoration: BoxDecoration(
-                          color: Color(0xFF4B39EF),
+                          color: const Color(0xFF4B39EF),
                           borderRadius: BorderRadius.circular(2.0),
                         ),
                       ),
                       Expanded(
                         child: Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
                               12.0, 0.0, 0.0, 0.0),
                           child: Text(
                             'Check-in evaluated',
@@ -122,7 +119,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                             .bodyLarge
                                             .fontStyle,
                                       ),
-                                      color: Color(0xFF14181B),
+                                      color: const Color(0xFF14181B),
                                       fontSize: 16.0,
                                       letterSpacing: 0.0,
                                       fontWeight: FontWeight.normal,
@@ -135,7 +132,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                       ),
                       Padding(
                         padding:
-                            EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
+                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
                         child: Text(
                           'Mar 8, 2022',
                           style:
@@ -146,7 +143,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                           .labelMedium
                                           .fontStyle,
                                     ),
-                                    color: Color(0xFF57636C),
+                                    color: const Color(0xFF57636C),
                                     fontSize: 14.0,
                                     letterSpacing: 0.0,
                                     fontWeight: FontWeight.normal,
@@ -162,12 +159,12 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
               ),
             ),
             Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
+              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       blurRadius: 0.0,
                       color: Color(0xFFE0E3E7),
@@ -181,7 +178,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                   shape: BoxShape.rectangle,
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
                     children: [
@@ -189,13 +186,13 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                         width: 4.0,
                         height: 50.0,
                         decoration: BoxDecoration(
-                          color: Color(0xFF4B39EF),
+                          color: const Color(0xFF4B39EF),
                           borderRadius: BorderRadius.circular(2.0),
                         ),
                       ),
                       Expanded(
                         child: Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
                               12.0, 0.0, 0.0, 0.0),
                           child: Text(
                             'Check-in evaluated',
@@ -207,7 +204,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                             .bodyLarge
                                             .fontStyle,
                                       ),
-                                      color: Color(0xFF14181B),
+                                      color: const Color(0xFF14181B),
                                       fontSize: 16.0,
                                       letterSpacing: 0.0,
                                       fontWeight: FontWeight.normal,
@@ -220,7 +217,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                       ),
                       Padding(
                         padding:
-                            EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
+                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
                         child: Text(
                           'Mar 8, 2022',
                           style:
@@ -231,7 +228,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                           .labelMedium
                                           .fontStyle,
                                     ),
-                                    color: Color(0xFF57636C),
+                                    color: const Color(0xFF57636C),
                                     fontSize: 14.0,
                                     letterSpacing: 0.0,
                                     fontWeight: FontWeight.normal,
@@ -247,12 +244,12 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
               ),
             ),
             Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
+              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       blurRadius: 0.0,
                       color: Color(0xFFE0E3E7),
@@ -266,7 +263,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                   shape: BoxShape.rectangle,
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
                     children: [
@@ -274,13 +271,13 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                         width: 4.0,
                         height: 50.0,
                         decoration: BoxDecoration(
-                          color: Color(0xFF4B39EF),
+                          color: const Color(0xFF4B39EF),
                           borderRadius: BorderRadius.circular(2.0),
                         ),
                       ),
                       Expanded(
                         child: Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
                               12.0, 0.0, 0.0, 0.0),
                           child: Text(
                             'Check-in evaluated',
@@ -292,7 +289,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                             .bodyLarge
                                             .fontStyle,
                                       ),
-                                      color: Color(0xFF14181B),
+                                      color: const Color(0xFF14181B),
                                       fontSize: 16.0,
                                       letterSpacing: 0.0,
                                       fontWeight: FontWeight.normal,
@@ -305,7 +302,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                       ),
                       Padding(
                         padding:
-                            EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
+                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
                         child: Text(
                           'Mar 8, 2022',
                           style:
@@ -316,7 +313,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                           .labelMedium
                                           .fontStyle,
                                     ),
-                                    color: Color(0xFF57636C),
+                                    color: const Color(0xFF57636C),
                                     fontSize: 14.0,
                                     letterSpacing: 0.0,
                                     fontWeight: FontWeight.normal,
@@ -332,12 +329,12 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
               ),
             ),
             Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
+              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Color(0xFFF1F4F8),
-                  boxShadow: [
+                  color: const Color(0xFFF1F4F8),
+                  boxShadow: const [
                     BoxShadow(
                       blurRadius: 0.0,
                       color: Color(0xFFE0E3E7),
@@ -351,7 +348,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                   shape: BoxShape.rectangle,
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
                     children: [
@@ -359,13 +356,13 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                         width: 4.0,
                         height: 50.0,
                         decoration: BoxDecoration(
-                          color: Color(0xFFE0E3E7),
+                          color: const Color(0xFFE0E3E7),
                           borderRadius: BorderRadius.circular(2.0),
                         ),
                       ),
                       Expanded(
                         child: Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
                               12.0, 0.0, 0.0, 0.0),
                           child: Text(
                             'New Event added to your calendar',
@@ -378,7 +375,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                         .labelLarge
                                         .fontStyle,
                                   ),
-                                  color: Color(0xFF57636C),
+                                  color: const Color(0xFF57636C),
                                   fontSize: 16.0,
                                   letterSpacing: 0.0,
                                   fontWeight: FontWeight.normal,
@@ -391,7 +388,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                       ),
                       Padding(
                         padding:
-                            EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
+                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
                         child: Text(
                           'Mar 8, 2022',
                           style:
@@ -402,7 +399,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                           .labelMedium
                                           .fontStyle,
                                     ),
-                                    color: Color(0xFF57636C),
+                                    color: const Color(0xFF57636C),
                                     fontSize: 14.0,
                                     letterSpacing: 0.0,
                                     fontWeight: FontWeight.normal,
@@ -418,12 +415,12 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
               ),
             ),
             Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
+              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Color(0xFFF1F4F8),
-                  boxShadow: [
+                  color: const Color(0xFFF1F4F8),
+                  boxShadow: const [
                     BoxShadow(
                       blurRadius: 0.0,
                       color: Color(0xFFE0E3E7),
@@ -437,7 +434,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                   shape: BoxShape.rectangle,
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
                     children: [
@@ -445,13 +442,13 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                         width: 4.0,
                         height: 50.0,
                         decoration: BoxDecoration(
-                          color: Color(0xFFE0E3E7),
+                          color: const Color(0xFFE0E3E7),
                           borderRadius: BorderRadius.circular(2.0),
                         ),
                       ),
                       Expanded(
                         child: Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
                               12.0, 0.0, 0.0, 0.0),
                           child: Text(
                             'Profile Modified',
@@ -464,7 +461,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                         .labelLarge
                                         .fontStyle,
                                   ),
-                                  color: Color(0xFF57636C),
+                                  color: const Color(0xFF57636C),
                                   fontSize: 16.0,
                                   letterSpacing: 0.0,
                                   fontWeight: FontWeight.normal,
@@ -477,7 +474,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                       ),
                       Padding(
                         padding:
-                            EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
+                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
                         child: Text(
                           'Mar 8, 2022',
                           style:
@@ -488,7 +485,7 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
                                           .labelMedium
                                           .fontStyle,
                                     ),
-                                    color: Color(0xFF57636C),
+                                    color: const Color(0xFF57636C),
                                     fontSize: 14.0,
                                     letterSpacing: 0.0,
                                     fontWeight: FontWeight.normal,

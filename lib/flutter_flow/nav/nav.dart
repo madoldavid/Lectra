@@ -1,20 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:page_transition/page_transition.dart';
 import 'package:provider/provider.dart';
 
 import '/auth/base_auth_user_provider.dart';
 
-import '/main.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/lat_lng.dart';
-import '/flutter_flow/place.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import 'serialization_util.dart';
 
 import '/index.dart';
+import '/pages/edit_profile_page/edit_profile_page_widget.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -74,6 +69,8 @@ class AppStateNotifier extends ChangeNotifier {
     showSplashImage = false;
     notifyListeners();
   }
+
+  Future<void> initializePersistedState() async {}
 }
 
 GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
@@ -82,50 +79,70 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
       refreshListenable: appStateNotifier,
       navigatorKey: appNavigatorKey,
       errorBuilder: (context, state) =>
-          appStateNotifier.loggedIn ? HomeWidget() : SignUpPageWidget(),
+          appStateNotifier.loggedIn ? const HomeWidget() : const SignUpPageWidget(),
       routes: [
         FFRoute(
           name: '_initialize',
           path: '/',
           builder: (context, _) =>
-              appStateNotifier.loggedIn ? HomeWidget() : SignUpPageWidget(),
+              appStateNotifier.loggedIn ? const HomeWidget() : const SignUpPageWidget(),
         ),
         FFRoute(
           name: HomeWidget.routeName,
           path: HomeWidget.routePath,
-          builder: (context, params) => HomeWidget(),
+          builder: (context, params) => const HomeWidget(),
         ),
         FFRoute(
           name: SettingPageWidget.routeName,
           path: SettingPageWidget.routePath,
-          builder: (context, params) => SettingPageWidget(),
+          builder: (context, params) => const SettingPageWidget(),
         ),
         FFRoute(
           name: SignUpPageWidget.routeName,
           path: SignUpPageWidget.routePath,
-          builder: (context, params) => SignUpPageWidget(),
+          builder: (context, params) => const SignUpPageWidget(),
         ),
         FFRoute(
           name: NotesPageWidget.routeName,
           path: NotesPageWidget.routePath,
-          builder: (context, params) => NotesPageWidget(),
+          builder: (context, params) => const NotesPageWidget(),
         ),
         FFRoute(
           name: NotesDetailPageWidget.routeName,
           path: NotesDetailPageWidget.routePath,
           builder: (context, params) => NotesDetailPageWidget(
-            audioPath: params.getParam('audioPath', ParamType.String, false),
-            notesPath: params.getParam('notesPath', ParamType.String, false),
-            title: params.getParam('title', ParamType.String, false),
-            createdAt: params.getParam('createdAt', ParamType.DateTime, false),
+            audioPath: params.getParam('audioPath', ParamType.string),
+            notesPath: params.getParam('notesPath', ParamType.string),
+            title: params.getParam('title', ParamType.string),
+            createdAt: params.getParam('createdAt', ParamType.dateTime),
             durationSeconds:
-                params.getParam('durationSeconds', ParamType.int, false),
+                params.getParam('durationSeconds', ParamType.int),
           ),
         ),
         FFRoute(
           name: NotificationPageWidget.routeName,
           path: NotificationPageWidget.routePath,
-          builder: (context, params) => NotificationPageWidget(),
+          builder: (context, params) => const NotificationPageWidget(),
+        ),
+        FFRoute(
+          name: AccountSettingsPageWidget.routeName,
+          path: AccountSettingsPageWidget.routePath,
+          builder: (context, params) => const AccountSettingsPageWidget(),
+        ),
+        FFRoute(
+          name: EditProfilePageWidget.routeName,
+          path: EditProfilePageWidget.routePath,
+          builder: (context, params) => const EditProfilePageWidget(),
+        ),
+        FFRoute(
+          name: StorageAndDataPageWidget.routeName,
+          path: StorageAndDataPageWidget.routePath,
+          builder: (context, params) => const StorageAndDataPageWidget(),
+        ),
+        FFRoute(
+          name: HelpAndSupportPageWidget.routeName,
+          path: HelpAndSupportPageWidget.routePath,
+          builder: (context, params) => const HelpAndSupportPageWidget(),
         )
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
     );
@@ -179,7 +196,7 @@ extension NavigationExtensions on BuildContext {
     if (canPop()) {
       pop();
     } else {
-      go('/');
+      goNamed('/');
     }
   }
 }
@@ -361,7 +378,7 @@ class TransitionInfo {
   final Duration duration;
   final Alignment? alignment;
 
-  static TransitionInfo appDefault() => TransitionInfo(hasTransition: false);
+  static TransitionInfo appDefault() => const TransitionInfo(hasTransition: false);
 }
 
 class RootPageContext {
@@ -370,7 +387,7 @@ class RootPageContext {
   final String? errorRoute;
 
   static bool isInactiveRootPage(BuildContext context) {
-    final rootPageContext = context.read<RootPageContext?>();
+    final rootPageContext = Provider.of<RootPageContext?>(context);
     final isRootPage = rootPageContext?.isRootPage ?? false;
     final location = GoRouterState.of(context).uri.toString();
     return isRootPage &&

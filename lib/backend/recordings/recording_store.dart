@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+
+import 'package:lectra/services/gemini_service.dart';
 
 class RecordingEntry {
   RecordingEntry({
@@ -76,6 +79,7 @@ class RecordingStore {
           final audioExists = File(entry.audioPath).existsSync();
           final notesExists = File(entry.notesPath).existsSync();
           if (!audioExists && !notesExists) {
+            await deleteRecording(entry);
             continue;
           }
           entries.add(entry);
@@ -92,34 +96,16 @@ class RecordingStore {
     required String audioPath,
     required String transcript,
     required Duration duration,
+    required GeminiService geminiService,
   }) async {
     final createdAt = DateTime.now();
     final basePath = _stripExtension(audioPath);
     final notesPath = '$basePath.txt';
     final metaPath = '$basePath.json';
     final title = _titleFromDate(createdAt);
-    final highlights = _extractHighlights(transcript);
-    final transcriptPreview = _previewTranscript(transcript);
 
-    final buffer = StringBuffer();
-    buffer.writeln('Lecture Notes');
-    buffer.writeln('Title: $title');
-    buffer.writeln('Recorded: ${createdAt.toIso8601String()}');
-    buffer.writeln('Duration: ${_formatDuration(duration)}');
-    buffer.writeln();
-    buffer.writeln('Highlights (auto-extracted)');
-    if (highlights.isEmpty) {
-      buffer.writeln('- (No transcript available)');
-    } else {
-      for (final line in highlights) {
-        buffer.writeln('- $line');
-      }
-    }
-    buffer.writeln();
-    buffer.writeln('Transcript');
-    buffer.writeln(transcript.isEmpty ? '(No transcript available)' : transcript);
-
-    await File(notesPath).writeAsString(buffer.toString());
+    final notes = await geminiService.generateNotes(transcript);
+    await File(notesPath).writeAsString(notes);
 
     final entry = RecordingEntry(
       id: _fileName(basePath),
@@ -128,10 +114,36 @@ class RecordingStore {
       duration: duration,
       audioPath: audioPath,
       notesPath: notesPath,
-      transcriptPreview: transcriptPreview,
+      transcriptPreview: (transcript.length > 160) ? '${transcript.substring(0, 160)}...' : transcript,
     );
     await File(metaPath).writeAsString(jsonEncode(entry.toJson()));
     return entry;
+  }
+
+  static Future<void> deleteRecording(RecordingEntry entry) async {
+    try {
+      final audioFile = File(entry.audioPath);
+      if (audioFile.existsSync()) {
+        await audioFile.delete();
+      }
+
+      final notesFile = File(entry.notesPath);
+      if (notesFile.existsSync()) {
+        await notesFile.delete();
+      }
+
+      final metaPath = '${_stripExtension(entry.audioPath)}.json';
+      final metaFile = File(metaPath);
+      if (metaFile.existsSync()) {
+        await metaFile.delete();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        if (kDebugMode) {
+          print('Error deleting recording files for ${entry.id}: $e');
+        }
+      }
+    }
   }
 
   static String _stripExtension(String path) {
@@ -171,38 +183,5 @@ class RecordingStore {
       return 'Unknown';
     }
     return months[month - 1];
-  }
-
-  static List<String> _extractHighlights(String transcript) {
-    if (transcript.trim().isEmpty) {
-      return [];
-    }
-    final sentences = transcript
-        .split(RegExp(r'(?<=[.!?])\s+'))
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-    if (sentences.isEmpty) {
-      return [];
-    }
-    return sentences.take(5).toList();
-  }
-
-  static String _previewTranscript(String transcript) {
-    final trimmed = transcript.trim();
-    if (trimmed.isEmpty) {
-      return '';
-    }
-    final limit = 160;
-    if (trimmed.length <= limit) {
-      return trimmed;
-    }
-    return '${trimmed.substring(0, limit)}...';
-  }
-
-  static String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '${duration.inHours.toString().padLeft(2, '0')}:$minutes:$seconds';
   }
 }

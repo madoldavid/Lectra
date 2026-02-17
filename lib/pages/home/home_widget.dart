@@ -1,35 +1,27 @@
+import 'package:provider/provider.dart';
+
+import '/services/gemini_service.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
 import '/backend/recordings/recording_store.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'home_model.dart';
 export 'home_model.dart';
 
-/// Home screen for a student lecture app.
-///
-/// Top section shows recent lectures list.
-/// Center large primary button labeled “Record Lecture”.
-/// Minimal navigation.
-/// Clean modern design.
-/// Focus attention on the record button.
-/// Feels fast and distraction-free.
 class HomeWidget extends StatefulWidget {
   const HomeWidget({super.key});
 
-  static String routeName = 'Home';
-  static String routePath = '/home';
+  static const routeName = 'Home';
+  static const routePath = '/home';
 
   @override
   State<HomeWidget> createState() => _HomeWidgetState();
@@ -38,7 +30,7 @@ class HomeWidget extends StatefulWidget {
 class _HomeWidgetState extends State<HomeWidget> {
   late HomeModel _model;
 
-  final scaffoldKey = GlobalKey<ScaffoldState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final AudioRecorder _audioRecorder = AudioRecorder();
   final stt.SpeechToText _speech = stt.SpeechToText();
   Timer? _recordingTimer;
@@ -78,7 +70,7 @@ class _HomeWidgetState extends State<HomeWidget> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Microphone permission is required.')),
+        const SnackBar(content: Text('Microphone permission is required.')),
       );
       return;
     }
@@ -123,12 +115,14 @@ class _HomeWidgetState extends State<HomeWidget> {
 
     final audioPath = await _audioRecorder.stop();
     final transcript = _buildFullTranscript();
+    final geminiService = Provider.of<GeminiService>(context, listen: false);
 
     if (audioPath != null) {
       await RecordingStore.saveRecording(
         audioPath: audioPath,
         transcript: transcript,
         duration: _recordingDuration,
+        geminiService: geminiService,
       );
     }
 
@@ -139,8 +133,11 @@ class _HomeWidgetState extends State<HomeWidget> {
       _isRecording = false;
     });
     await _loadRecordings();
+    if (!mounted) {
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Recording saved locally.')),
+      const SnackBar(content: Text('Recording saved and notes generated.')),
     );
   }
 
@@ -176,7 +173,6 @@ class _HomeWidgetState extends State<HomeWidget> {
     _speechListening = true;
     await _speech.listen(
       onResult: _onSpeechResult,
-      listenMode: stt.ListenMode.dictation,
       partialResults: true,
       listenFor: const Duration(hours: 2),
       pauseFor: const Duration(seconds: 3),
@@ -237,10 +233,10 @@ class _HomeWidgetState extends State<HomeWidget> {
     context.pushNamed(
       NotesDetailPageWidget.routeName,
       queryParameters: {
-        'audioPath': serializeParam(entry.audioPath, ParamType.String),
-        'notesPath': serializeParam(entry.notesPath, ParamType.String),
-        'title': serializeParam(entry.title, ParamType.String),
-        'createdAt': serializeParam(entry.createdAt, ParamType.DateTime),
+        'audioPath': serializeParam(entry.audioPath, ParamType.string),
+        'notesPath': serializeParam(entry.notesPath, ParamType.string),
+        'title': serializeParam(entry.title, ParamType.string),
+        'createdAt': serializeParam(entry.createdAt, ParamType.dateTime),
         'durationSeconds':
             serializeParam(entry.duration.inSeconds, ParamType.int),
       }.withoutNulls,
@@ -249,7 +245,7 @@ class _HomeWidgetState extends State<HomeWidget> {
 
   Widget _buildLectureCard(RecordingEntry entry) {
     return Padding(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: InkWell(
         splashColor: Colors.transparent,
         focusColor: Colors.transparent,
@@ -263,7 +259,7 @@ class _HomeWidgetState extends State<HomeWidget> {
             borderRadius: BorderRadius.circular(12.0),
           ),
           child: Padding(
-            padding: EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(12.0),
             child: Row(
               mainAxisSize: MainAxisSize.max,
               children: [
@@ -275,7 +271,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   child: Align(
-                    alignment: AlignmentDirectional(0.0, 0.0),
+                    alignment: const AlignmentDirectional(0, 0),
                     child: Icon(
                       Icons.play_arrow_rounded,
                       color: FlutterFlowTheme.of(context).primary,
@@ -306,7 +302,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                       ),
                       Padding(
                         padding:
-                            EdgeInsetsDirectional.fromSTEB(0.0, 4.0, 0.0, 0.0),
+                            const EdgeInsetsDirectional.fromSTEB(0, 4, 0, 0),
                         child: Text(
                           '${dateTimeFormat('relative', entry.createdAt)} • ${_formatDuration(entry.duration)}',
                           style: FlutterFlowTheme.of(context).bodySmall.override(
@@ -338,7 +334,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                   color: FlutterFlowTheme.of(context).secondaryText,
                   size: 20.0,
                 ),
-              ].divide(SizedBox(width: 12.0)),
+              ].divide(const SizedBox(width: 12)),
             ),
           ),
         ),
@@ -362,7 +358,7 @@ class _HomeWidgetState extends State<HomeWidget> {
         FocusManager.instance.primaryFocus?.unfocus();
       },
       child: Scaffold(
-        key: scaffoldKey,
+        key: _scaffoldKey,
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
           backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
@@ -378,7 +374,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: Align(
-                  alignment: AlignmentDirectional(0.0, 0.0),
+                  alignment: const AlignmentDirectional(0, 0),
                   child: Icon(
                     Icons.school_rounded,
                     color: FlutterFlowTheme.of(context).info,
@@ -391,7 +387,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'LectureNote',
+                    'Lectra',
                     style: FlutterFlowTheme.of(context).titleLarge.override(
                           font: GoogleFonts.interTight(
                             fontWeight: FontWeight.bold,
@@ -426,13 +422,13 @@ class _HomeWidgetState extends State<HomeWidget> {
                   ),
                 ],
               ),
-            ].divide(SizedBox(width: 12.0)),
+            ].divide(const SizedBox(width: 12)),
           ),
           actions: [
             Align(
-              alignment: AlignmentDirectional(0.0, 0.0),
+              alignment: const AlignmentDirectional(0, 0),
               child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
                 child: FlutterFlowIconButton(
                   borderRadius: 12.0,
                   buttonSize: 40.0,
@@ -455,7 +451,7 @@ class _HomeWidgetState extends State<HomeWidget> {
         body: SafeArea(
           top: true,
           child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(24.0, 16.0, 24.0, 24.0),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 16, 24, 24),
             child: Column(
               mainAxisSize: MainAxisSize.max,
               children: [
@@ -517,7 +513,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                     ),
                     if (_loadingRecordings)
                       Padding(
-                        padding: EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(16.0),
                         child: Text(
                           'Loading recordings...',
                           style: FlutterFlowTheme.of(context)
@@ -539,7 +535,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                       )
                     else if (_recordings.isEmpty)
                       Padding(
-                        padding: EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(16.0),
                         child: Text(
                           'No recordings yet.',
                           style: FlutterFlowTheme.of(context)
@@ -565,12 +561,12 @@ class _HomeWidgetState extends State<HomeWidget> {
                         primary: false,
                         shrinkWrap: true,
                         scrollDirection: Axis.vertical,
-                        children:
-                            _recordings.map(_buildLectureCard).toList().divide(
-                                  SizedBox(height: 12.0),
-                                ),
+                        children: _recordings
+                            .map(_buildLectureCard)
+                            .toList()
+                            .divide(const SizedBox(height: 12)),
                       ),
-                  ].divide(SizedBox(height: 16.0)),
+                  ].divide(const SizedBox(height: 16)),
                 ),
                 Expanded(
                   child: Column(
@@ -578,7 +574,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Align(
-                        alignment: AlignmentDirectional(0.0, 0.0),
+                        alignment: const AlignmentDirectional(0, 0),
                         child: InkWell(
                           splashColor: Colors.transparent,
                           focusColor: Colors.transparent,
@@ -593,29 +589,29 @@ class _HomeWidgetState extends State<HomeWidget> {
                               width: 120.0,
                               height: 120.0,
                               decoration: BoxDecoration(
-                                boxShadow: [
+                                boxShadow: const [
                                   BoxShadow(
                                     blurRadius: 20.0,
                                     color: Colors.white,
                                     offset: Offset(
-                                      0.0,
-                                      8.0,
+                                      0,
+                                      8,
                                     ),
                                   )
                                 ],
                                 gradient: LinearGradient(
                                   colors: [
-                                    Color(0xFF6366F1),
+                                    const Color(0xFF6366F1),
                                     FlutterFlowTheme.of(context).primary
                                   ],
-                                  stops: [0.8, 1.0],
-                                  begin: AlignmentDirectional(0.0, -1.0),
-                                  end: AlignmentDirectional(0, 1.0),
+                                  stops: const [0.8, 1.0],
+                                  begin: const AlignmentDirectional(0, -1),
+                                  end: const AlignmentDirectional(0, 1),
                                 ),
                                 shape: BoxShape.circle,
                               ),
                               child: Align(
-                                alignment: AlignmentDirectional(0.0, 0.0),
+                                alignment: const AlignmentDirectional(0, 0),
                                 child: Icon(
                                   Icons.mic_rounded,
                                   color: FlutterFlowTheme.of(context).info,
@@ -668,7 +664,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                                   .fontStyle,
                             ),
                       ),
-                    ].divide(SizedBox(height: 16.0)),
+                    ].divide(const SizedBox(height: 16)),
                   ),
                 ),
                 Row(
@@ -695,7 +691,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                               borderRadius: BorderRadius.circular(16.0),
                             ),
                             child: Align(
-                              alignment: AlignmentDirectional(0.0, 0.0),
+                              alignment: const AlignmentDirectional(0, 0),
                               child: Icon(
                                 Icons.folder_outlined,
                                 color: FlutterFlowTheme.of(context).primaryText,
@@ -705,8 +701,8 @@ class _HomeWidgetState extends State<HomeWidget> {
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              0.0, 8.0, 0.0, 0.0),
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                              0, 8, 0, 0),
                           child: Text(
                             'Library',
                             textAlign: TextAlign.center,
@@ -740,7 +736,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                             borderRadius: BorderRadius.circular(16.0),
                           ),
                           child: Align(
-                            alignment: AlignmentDirectional(0.0, 0.0),
+                            alignment: const AlignmentDirectional(0, 0),
                             child: Icon(
                               Icons.search_rounded,
                               color: FlutterFlowTheme.of(context).primaryText,
@@ -749,8 +745,8 @@ class _HomeWidgetState extends State<HomeWidget> {
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              0.0, 8.0, 0.0, 0.0),
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                              0, 8, 0, 0),
                           child: Text(
                             'Search',
                             textAlign: TextAlign.center,
@@ -792,7 +788,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                               borderRadius: BorderRadius.circular(16.0),
                             ),
                             child: Align(
-                              alignment: AlignmentDirectional(0.0, 0.0),
+                              alignment: const AlignmentDirectional(0, 0),
                               child: Icon(
                                 Icons.settings_outlined,
                                 color: FlutterFlowTheme.of(context).primaryText,
@@ -802,8 +798,8 @@ class _HomeWidgetState extends State<HomeWidget> {
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              0.0, 8.0, 0.0, 0.0),
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                              0, 8, 0, 0),
                           child: Text(
                             'Settings',
                             textAlign: TextAlign.center,
@@ -827,7 +823,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                     ),
                   ],
                 ),
-              ].divide(SizedBox(height: 32.0)),
+              ].divide(const SizedBox(height: 32)),
             ),
           ),
         ),

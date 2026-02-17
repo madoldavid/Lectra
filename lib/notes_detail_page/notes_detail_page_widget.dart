@@ -2,11 +2,9 @@ import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import 'dart:io';
-import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:provider/provider.dart';
 import 'notes_detail_page_model.dart';
 export 'notes_detail_page_model.dart';
 
@@ -189,7 +187,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
           top: true,
           child: SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(20.0, 16.0, 20.0, 24.0),
+              padding: const EdgeInsetsDirectional.fromSTEB(20.0, 16.0, 20.0, 24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +199,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                       borderRadius: BorderRadius.circular(16.0),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(16.0),
                       child: Column(
                         mainAxisSize: MainAxisSize.max,
                         children: [
@@ -223,7 +221,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                       .fontStyle,
                                 ),
                           ),
-                          SizedBox(height: 12.0),
+                          const SizedBox(height: 12.0),
                           if (_loadingAudio)
                             Text(
                               'Preparing audio...',
@@ -275,7 +273,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                 );
                               },
                             ),
-                          SizedBox(height: 12.0),
+                          const SizedBox(height: 12.0),
                           StreamBuilder<Duration?>(
                             stream: _player.durationStream,
                             builder: (context, snapshot) {
@@ -365,7 +363,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 20.0),
+                  const SizedBox(height: 20.0),
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -373,7 +371,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                       borderRadius: BorderRadius.circular(16.0),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -395,7 +393,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                       .fontStyle,
                                 ),
                           ),
-                          SizedBox(height: 12.0),
+                          const SizedBox(height: 12.0),
                           if (_loadingNotes)
                             Text(
                               'Loading notes...',
@@ -429,14 +427,13 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                           .fontStyle,
                                     ),
                                     letterSpacing: 0.0,
-                                    height: 1.5,
                                   ),
                             ),
                         ],
                       ),
                     ),
                   ),
-                ].divide(SizedBox(height: 12.0)),
+                ].divide(const SizedBox(height: 12.0)),
               ),
             ),
           ),

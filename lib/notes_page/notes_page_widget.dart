@@ -1,13 +1,10 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import '/backend/recordings/recording_store.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'notes_page_model.dart';
 export 'notes_page_model.dart';
 
@@ -57,6 +54,31 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
     });
   }
 
+  Future<void> _deleteRecording(RecordingEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Recording'),
+        content: const Text('Are you sure you want to delete this recording?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await RecordingStore.deleteRecording(entry);
+      await _loadRecordings();
+    }
+  }
+
   String _formatDuration(Duration duration) {
     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
@@ -67,10 +89,10 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
     context.pushNamed(
       NotesDetailPageWidget.routeName,
       queryParameters: {
-        'audioPath': serializeParam(entry.audioPath, ParamType.String),
-        'notesPath': serializeParam(entry.notesPath, ParamType.String),
-        'title': serializeParam(entry.title, ParamType.String),
-        'createdAt': serializeParam(entry.createdAt, ParamType.DateTime),
+        'audioPath': serializeParam(entry.audioPath, ParamType.string),
+        'notesPath': serializeParam(entry.notesPath, ParamType.string),
+        'title': serializeParam(entry.title, ParamType.string),
+        'createdAt': serializeParam(entry.createdAt, ParamType.dateTime),
         'durationSeconds':
             serializeParam(entry.duration.inSeconds, ParamType.int),
       }.withoutNulls,
@@ -79,7 +101,7 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
 
   Widget _buildLectureCard(RecordingEntry entry) {
     return Padding(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: InkWell(
         splashColor: Colors.transparent,
         focusColor: Colors.transparent,
@@ -93,7 +115,7 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
             borderRadius: BorderRadius.circular(12.0),
           ),
           child: Padding(
-            padding: EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(12.0),
             child: Row(
               mainAxisSize: MainAxisSize.max,
               children: [
@@ -105,7 +127,7 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   child: Align(
-                    alignment: AlignmentDirectional(0.0, 0.0),
+                    alignment: const AlignmentDirectional(0.0, 0.0),
                     child: Icon(
                       Icons.play_arrow_rounded,
                       color: FlutterFlowTheme.of(context).primary,
@@ -136,7 +158,7 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
                       ),
                       Padding(
                         padding:
-                            EdgeInsetsDirectional.fromSTEB(0.0, 4.0, 0.0, 0.0),
+                            const EdgeInsetsDirectional.fromSTEB(0.0, 4.0, 0.0, 0.0),
                         child: Text(
                           '${dateTimeFormat('relative', entry.createdAt)} • ${_formatDuration(entry.duration)}',
                           style: FlutterFlowTheme.of(context).bodySmall.override(
@@ -157,12 +179,19 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.more_vert_rounded,
-                  color: FlutterFlowTheme.of(context).secondaryText,
-                  size: 20.0,
+                FlutterFlowIconButton(
+                  borderColor: Colors.transparent,
+                  borderRadius: 20.0,
+                  borderWidth: 1.0,
+                  buttonSize: 40.0,
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: FlutterFlowTheme.of(context).secondaryText,
+                    size: 20.0,
+                  ),
+                  onPressed: () => _deleteRecording(entry),
                 ),
-              ].divide(SizedBox(width: 12.0)),
+              ].divide(const SizedBox(width: 12.0)),
             ),
           ),
         ),
@@ -229,14 +258,14 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
               ),
             ],
           ),
-          actions: [],
+          actions: const [],
           centerTitle: false,
           elevation: 0.0,
         ),
         body: SafeArea(
           top: true,
           child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(20.0, 0.0, 20.0, 0.0),
+            padding: const EdgeInsetsDirectional.fromSTEB(20.0, 0.0, 20.0, 0.0),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.max,
@@ -247,11 +276,11 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
                       children: _recordings
                           .map(_buildLectureCard)
                           .toList()
-                          .divide(SizedBox(height: 12.0)),
+                          .divide(const SizedBox(height: 12.0)),
                     )
                   else
-                    SizedBox.shrink(),
-                ].divide(SizedBox(height: 8.0)),
+                    const SizedBox.shrink(),
+                ].divide(const SizedBox(height: 8.0)),
               ),
             ),
           ),
