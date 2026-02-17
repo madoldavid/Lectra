@@ -14,10 +14,6 @@ class SupabaseAuthManager extends AuthManager
   static const Duration _oauthTimeout = Duration(minutes: 2);
   static const String _mobileRedirectUrl = 'lectra://lectra.com';
 
-  BaseAuthUser? currentUser;
-
-  bool get loggedIn => currentUser != null;
-
   @override
   Future signOut() {
     currentUser = null;
@@ -42,57 +38,61 @@ class SupabaseAuthManager extends AuthManager
   }
 
   @override
-  Future updateEmail({
+  Future<bool> updateEmail({
     required String email,
     required BuildContext context,
   }) async {
     try {
       if (!loggedIn) {
         // Error: update email attempted with no logged in user!
-        return;
+        return false;
       }
       await currentUser?.updateEmail(email);
     } on AuthException catch (e) {
-      if (!context.mounted) return;
+      if (!context.mounted) return false;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
       );
-      return;
+      return false;
     }
-    if (!context.mounted) return;
+    if (!context.mounted) return true;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Email change confirmation email sent')),
     );
+    return true;
   }
 
-  Future updatePassword({
+  @override
+  Future<bool> updatePassword({
     required String newPassword,
     required BuildContext context,
   }) async {
     try {
       if (!loggedIn) {
         // Error: update password attempted with no logged in user!
-        return;
+        return false;
       }
       await currentUser?.updatePassword(newPassword);
     } on AuthException catch (e) {
-      if (!context.mounted) return;
+      if (!context.mounted) return false;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
       );
-      return;
+      return false;
     }
-    if (!context.mounted) return;
+    if (!context.mounted) return true;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Password updated successfully')),
     );
+    return true;
   }
 
   Future<void> updateCurrentUser(Map<String, dynamic> data) async {
     try {
-      final response = await SupaFlow.client.auth.updateUser(UserAttributes(data: data));
+      final response =
+          await SupaFlow.client.auth.updateUser(UserAttributes(data: data));
       final user = response.user;
       if (user != null) {
         final authUser = LectraSupabaseUser(user);
@@ -169,6 +169,7 @@ class SupabaseAuthManager extends AuthManager
       final authUser = user == null ? null : LectraSupabaseUser(user);
       if (authUser != null) {
         currentUser = authUser;
+        AppStateNotifier.instance.update(authUser);
       }
       return authUser;
     } on AuthException catch (e) {
@@ -204,9 +205,12 @@ class SupabaseAuthManager extends AuthManager
         return null;
       }
       final username = email.split('@')[0];
-      final response = await SupaFlow.client.auth.updateUser(UserAttributes(data: {'full_name': username}));
+      final response = await SupaFlow.client.auth
+          .updateUser(UserAttributes(data: {'full_name': username}));
       final updatedUser = response.user;
-      final authUser = updatedUser != null ? LectraSupabaseUser(updatedUser) : LectraSupabaseUser(user);
+      final authUser = updatedUser != null
+          ? LectraSupabaseUser(updatedUser)
+          : LectraSupabaseUser(user);
       currentUser = authUser;
       AppStateNotifier.instance.update(authUser);
       return authUser;
@@ -244,6 +248,7 @@ class SupabaseAuthManager extends AuthManager
       final authUser = user == null ? null : LectraSupabaseUser(user);
       if (authUser != null) {
         currentUser = authUser;
+        AppStateNotifier.instance.update(authUser);
       }
       return authUser;
     } on TimeoutException {

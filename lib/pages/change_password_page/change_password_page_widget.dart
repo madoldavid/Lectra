@@ -270,21 +270,23 @@ class _ChangePasswordPageWidgetState extends State<ChangePasswordPageWidget> {
                       context: context,
                       newPassword: newPassword,
                     );
+                    if (!context.mounted) {
+                      return;
+                    }
                     if (success) {
                       context.pop();
-                    } 
+                    }
                   },
                   text: 'Change Password',
                   options: FFButtonOptions(
                     width: double.infinity,
                     height: 50,
                     color: FlutterFlowTheme.of(context).primary,
-                    textStyle:
-                        FlutterFlowTheme.of(context).titleSmall.override(
-                              fontFamily: 'Readex Pro',
-                              color: Colors.white,
-                              letterSpacing: 0,
-                            ),
+                    textStyle: FlutterFlowTheme.of(context).titleSmall.override(
+                          fontFamily: 'Readex Pro',
+                          color: Colors.white,
+                          letterSpacing: 0,
+                        ),
                     elevation: 3,
                     borderSide: const BorderSide(
                       color: Colors.transparent,

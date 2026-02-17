@@ -41,7 +41,8 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final firstLetter = currentUserEmail.isNotEmpty ? currentUserEmail[0].toUpperCase() : '';
+    final firstLetter =
+        currentUserEmail.isNotEmpty ? currentUserEmail[0].toUpperCase() : '';
 
     return GestureDetector(
       onTap: () => _model.unfocusNode.canRequestFocus
@@ -95,7 +96,9 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
                         backgroundColor: FlutterFlowTheme.of(context).primary,
                         child: Text(
                           firstLetter,
-                          style: FlutterFlowTheme.of(context).headlineLarge.override(
+                          style: FlutterFlowTheme.of(context)
+                              .headlineLarge
+                              .override(
                                 fontFamily: 'Outfit',
                                 color: Colors.white,
                               ),
@@ -155,7 +158,8 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
                             size: 24,
                           ),
                           Padding(
-                            padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 0, 0),
+                            padding: const EdgeInsetsDirectional.fromSTEB(
+                                12, 0, 0, 0),
                             child: Text(
                               'Edit Profile',
                               style: FlutterFlowTheme.of(context)
@@ -189,8 +193,8 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
                             size: 24,
                           ),
                           Padding(
-                            padding:
-                                const EdgeInsetsDirectional.fromSTEB(12, 0, 0, 0),
+                            padding: const EdgeInsetsDirectional.fromSTEB(
+                                12, 0, 0, 0),
                             child: Text(
                               'Change Password',
                               style: FlutterFlowTheme.of(context)
@@ -224,8 +228,8 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
                             size: 24,
                           ),
                           Padding(
-                            padding:
-                                const EdgeInsetsDirectional.fromSTEB(12, 0, 0, 0),
+                            padding: const EdgeInsetsDirectional.fromSTEB(
+                                12, 0, 0, 0),
                             child: Text(
                               'Update Email',
                               style: FlutterFlowTheme.of(context)
@@ -249,33 +253,40 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
                       highlightColor: Colors.transparent,
                       onTap: () async {
                         var confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Delete Account'),
-                            content: const Text(
-                                'Are you sure you want to delete your account? This action cannot be undone.'),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(context, false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(context, true),
-                                child: Text(
-                                  'Delete',
-                                  style: TextStyle(
-                                    color: FlutterFlowTheme.of(context).error,
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Delete Account'),
+                                content: const Text(
+                                    'Are you sure you want to delete your account? This action cannot be undone.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
                                   ),
-                                ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        color:
+                                            FlutterFlowTheme.of(context).error,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ) ??
-                        false;
+                            ) ??
+                            false;
                         if (confirm) {
+                          if (!context.mounted) {
+                            return;
+                          }
                           await authManager.deleteUser(context);
+                          if (!context.mounted) {
+                            return;
+                          }
                           context.goNamed(SignUpPageWidget.routeName);
                         }
                       },
@@ -288,8 +299,8 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
                             size: 24,
                           ),
                           Padding(
-                            padding:
-                                const EdgeInsetsDirectional.fromSTEB(12, 0, 0, 0),
+                            padding: const EdgeInsetsDirectional.fromSTEB(
+                                12, 0, 0, 0),
                             child: Text(
                               'Delete Account',
                               style: FlutterFlowTheme.of(context)

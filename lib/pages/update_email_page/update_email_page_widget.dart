@@ -123,7 +123,9 @@ class _UpdateEmailPageWidgetState extends State<UpdateEmailPageWidget> {
                 child: FFButtonWidget(
                   onPressed: () async {
                     final newEmail = _model.newEmailController.text;
-                    if (newEmail.isEmpty || !RegExp(r'^[a-zA-Z0-9_\.-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$').hasMatch(newEmail)) {
+                    if (newEmail.isEmpty ||
+                        !RegExp(r'^[a-zA-Z0-9_\.-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+                            .hasMatch(newEmail)) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
@@ -137,6 +139,9 @@ class _UpdateEmailPageWidgetState extends State<UpdateEmailPageWidget> {
                       context: context,
                       email: newEmail,
                     );
+                    if (!context.mounted) {
+                      return;
+                    }
                     if (success) {
                       context.pop();
                     }
@@ -146,12 +151,11 @@ class _UpdateEmailPageWidgetState extends State<UpdateEmailPageWidget> {
                     width: double.infinity,
                     height: 50,
                     color: FlutterFlowTheme.of(context).primary,
-                    textStyle:
-                        FlutterFlowTheme.of(context).titleSmall.override(
-                              fontFamily: 'Readex Pro',
-                              color: Colors.white,
-                              letterSpacing: 0,
-                            ),
+                    textStyle: FlutterFlowTheme.of(context).titleSmall.override(
+                          fontFamily: 'Readex Pro',
+                          color: Colors.white,
+                          letterSpacing: 0,
+                        ),
                     elevation: 3,
                     borderSide: const BorderSide(
                       color: Colors.transparent,

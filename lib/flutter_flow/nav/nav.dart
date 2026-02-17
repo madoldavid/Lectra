@@ -36,7 +36,8 @@ class AppStateNotifier extends ChangeNotifier {
   /// Otherwise, this will trigger a refresh and interrupt the action(s).
   bool notifyOnAuthChange = true;
 
-  bool get loading => user == null || showSplashImage;
+  // Do not block app boot on auth stream timing. Router already handles loggedOut state.
+  bool get loading => showSplashImage;
   bool get loggedIn => user?.loggedIn ?? false;
   bool get initiallyLoggedIn => initialUser?.loggedIn ?? false;
   bool get shouldRedirect => loggedIn && _redirectLocation != null;
@@ -78,14 +79,16 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
       debugLogDiagnostics: true,
       refreshListenable: appStateNotifier,
       navigatorKey: appNavigatorKey,
-      errorBuilder: (context, state) =>
-          appStateNotifier.loggedIn ? const HomeWidget() : const SignUpPageWidget(),
+      errorBuilder: (context, state) => appStateNotifier.loggedIn
+          ? const HomeWidget()
+          : const SignUpPageWidget(),
       routes: [
         FFRoute(
           name: '_initialize',
           path: '/',
-          builder: (context, _) =>
-              appStateNotifier.loggedIn ? const HomeWidget() : const SignUpPageWidget(),
+          builder: (context, _) => appStateNotifier.loggedIn
+              ? const HomeWidget()
+              : const SignUpPageWidget(),
         ),
         FFRoute(
           name: HomeWidget.routeName,
@@ -115,8 +118,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             notesPath: params.getParam('notesPath', ParamType.string),
             title: params.getParam('title', ParamType.string),
             createdAt: params.getParam('createdAt', ParamType.dateTime),
-            durationSeconds:
-                params.getParam('durationSeconds', ParamType.int),
+            durationSeconds: params.getParam('durationSeconds', ParamType.int),
           ),
         ),
         FFRoute(
@@ -378,7 +380,8 @@ class TransitionInfo {
   final Duration duration;
   final Alignment? alignment;
 
-  static TransitionInfo appDefault() => const TransitionInfo(hasTransition: false);
+  static TransitionInfo appDefault() =>
+      const TransitionInfo(hasTransition: false);
 }
 
 class RootPageContext {

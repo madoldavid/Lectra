@@ -115,6 +115,9 @@ class _HomeWidgetState extends State<HomeWidget> {
 
     final audioPath = await _audioRecorder.stop();
     final transcript = _buildFullTranscript();
+    if (!mounted) {
+      return;
+    }
     final geminiService = Provider.of<GeminiService>(context, listen: false);
 
     if (audioPath != null) {
@@ -173,10 +176,12 @@ class _HomeWidgetState extends State<HomeWidget> {
     _speechListening = true;
     await _speech.listen(
       onResult: _onSpeechResult,
-      partialResults: true,
       listenFor: const Duration(hours: 2),
       pauseFor: const Duration(seconds: 3),
       localeId: 'en_US',
+      listenOptions: stt.SpeechListenOptions(
+        partialResults: true,
+      ),
     );
   }
 
@@ -207,8 +212,9 @@ class _HomeWidgetState extends State<HomeWidget> {
   }
 
   String _buildFullTranscript() {
-    final combined =
-        [_finalTranscript, _liveTranscript].where((e) => e.isNotEmpty).join(' ');
+    final combined = [_finalTranscript, _liveTranscript]
+        .where((e) => e.isNotEmpty)
+        .join(' ');
     return combined.trim();
   }
 
@@ -286,26 +292,29 @@ class _HomeWidgetState extends State<HomeWidget> {
                     children: [
                       Text(
                         entry.title,
-                        style: FlutterFlowTheme.of(context).titleMedium.override(
-                              font: GoogleFonts.interTight(
-                                fontWeight: FontWeight.w600,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .titleMedium
-                                    .fontStyle,
-                              ),
-                              letterSpacing: 0.0,
-                              fontWeight: FontWeight.w600,
-                              fontStyle: FlutterFlowTheme.of(context)
-                                  .titleMedium
-                                  .fontStyle,
-                            ),
+                        style:
+                            FlutterFlowTheme.of(context).titleMedium.override(
+                                  font: GoogleFonts.interTight(
+                                    fontWeight: FontWeight.w600,
+                                    fontStyle: FlutterFlowTheme.of(context)
+                                        .titleMedium
+                                        .fontStyle,
+                                  ),
+                                  letterSpacing: 0.0,
+                                  fontWeight: FontWeight.w600,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .titleMedium
+                                      .fontStyle,
+                                ),
                       ),
                       Padding(
                         padding:
                             const EdgeInsetsDirectional.fromSTEB(0, 4, 0, 0),
                         child: Text(
                           '${dateTimeFormat('relative', entry.createdAt)} • ${_formatDuration(entry.duration)}',
-                          style: FlutterFlowTheme.of(context).bodySmall.override(
+                          style: FlutterFlowTheme.of(context)
+                              .bodySmall
+                              .override(
                                 font: GoogleFonts.inter(
                                   fontWeight: FlutterFlowTheme.of(context)
                                       .bodySmall
@@ -701,8 +710,8 @@ class _HomeWidgetState extends State<HomeWidget> {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              0, 8, 0, 0),
+                          padding:
+                              const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
                           child: Text(
                             'Library',
                             textAlign: TextAlign.center,
@@ -745,8 +754,8 @@ class _HomeWidgetState extends State<HomeWidget> {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              0, 8, 0, 0),
+                          padding:
+                              const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
                           child: Text(
                             'Search',
                             textAlign: TextAlign.center,
@@ -798,8 +807,8 @@ class _HomeWidgetState extends State<HomeWidget> {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              0, 8, 0, 0),
+                          padding:
+                              const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
                           child: Text(
                             'Settings',
                             textAlign: TextAlign.center,

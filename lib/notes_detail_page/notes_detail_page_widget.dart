@@ -427,6 +427,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                           .fontStyle,
                                     ),
                                     letterSpacing: 0.0,
+                                    lineHeight: 1.5,
                                   ),
                             ),
                         ],

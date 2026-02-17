@@ -26,7 +26,8 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
   @override
   void initState() {
     super.initState();
-    _displayNameController = TextEditingController(text: currentUserDisplayName);
+    _displayNameController =
+        TextEditingController(text: currentUserDisplayName);
   }
 
   Future<String?> _uploadProfilePicture() async {
@@ -71,12 +72,16 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
         _isLoading = false;
       });
 
+      if (!mounted) {
+        return;
+      }
       context.pop();
     }
   }
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _imageFile = pickedFile;
@@ -133,10 +138,11 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
                         width: double.infinity,
                         height: 50,
                         color: FlutterFlowTheme.of(context).primary,
-                        textStyle: FlutterFlowTheme.of(context).titleSmall.override(
-                              fontFamily: 'Readex Pro',
-                              color: Colors.white,
-                            ),
+                        textStyle:
+                            FlutterFlowTheme.of(context).titleSmall.override(
+                                  fontFamily: 'Readex Pro',
+                                  color: Colors.white,
+                                ),
                         elevation: 3,
                         borderSide: const BorderSide(
                           color: Colors.transparent,

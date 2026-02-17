@@ -61,16 +61,25 @@ class _MyAppState extends State<MyApp> {
     super.initState();
 
     _appStateNotifier = AppStateNotifier.instance;
+    // Seed router state immediately to avoid loading lock before first auth stream event.
+    _appStateNotifier
+        .update(LectraSupabaseUser(SupaFlow.client.auth.currentUser));
     _router = createRouter(_appStateNotifier);
     userStream = lectraSupabaseUserStream()
       ..listen((user) {
         _appStateNotifier.update(user);
       });
     jwtTokenStream.listen((_) {});
-    Future.delayed(
-      const Duration(milliseconds: 1000),
-      () => _appStateNotifier.stopShowingSplashImage(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_appStateNotifier.showSplashImage) {
+        _appStateNotifier.stopShowingSplashImage();
+      }
+    });
+    Future.delayed(const Duration(seconds: 3), () {
+      if (_appStateNotifier.showSplashImage) {
+        _appStateNotifier.stopShowingSplashImage();
+      }
+    });
   }
 
   @override

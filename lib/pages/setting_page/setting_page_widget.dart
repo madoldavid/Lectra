@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '/auth/supabase_auth/auth_util.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
@@ -9,8 +8,7 @@ import 'setting_page_model.dart';
 export 'setting_page_model.dart';
 import '/pages/home/home_widget.dart';
 
-const String kPrivacyPolicyUrl =
-    'https://madoldavid.github.io/Lectra/privacy';
+const String kPrivacyPolicyUrl = 'https://madoldavid.github.io/Lectra/privacy';
 
 /// Create a pageProfile and settings screen.
 ///
@@ -50,7 +48,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final firstLetter = currentUserEmail.isNotEmpty ? currentUserEmail[0].toUpperCase() : '';
+    final firstLetter =
+        currentUserEmail.isNotEmpty ? currentUserEmail[0].toUpperCase() : '';
 
     return GestureDetector(
       onTap: () {
@@ -98,7 +97,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
             Align(
               alignment: const AlignmentDirectional(0.0, 0.0),
               child: Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+                padding:
+                    const EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
                 child: FlutterFlowIconButton(
                   borderRadius: 20.0,
                   buttonSize: 40.0,
@@ -107,10 +107,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                     color: FlutterFlowTheme.of(context).primaryText,
                     size: 20.0,
                   ),
-                  onPressed: () {
-                    if (kDebugMode) {
-                      print('IconButton pressed ...');
-                    }
+                  onPressed: () async {
+                    context.pushNamed('EditProfilePage');
                   },
                 ),
               ),
@@ -126,8 +124,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
               mainAxisSize: MainAxisSize.max,
               children: [
                 Padding(
-                  padding:
-                      const EdgeInsetsDirectional.fromSTEB(24.0, 32.0, 24.0, 32.0),
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                      24.0, 32.0, 24.0, 32.0),
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -142,10 +140,13 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                           if (currentUserPhoto.isEmpty)
                             CircleAvatar(
                               radius: 40,
-                              backgroundColor: FlutterFlowTheme.of(context).primary,
+                              backgroundColor:
+                                  FlutterFlowTheme.of(context).primary,
                               child: Text(
                                 firstLetter,
-                                style: FlutterFlowTheme.of(context).headlineLarge.override(
+                                style: FlutterFlowTheme.of(context)
+                                    .headlineLarge
+                                    .override(
                                       fontFamily: 'Outfit',
                                       color: Colors.white,
                                     ),
@@ -219,8 +220,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                   ),
                 ),
                 Padding(
-                  padding:
-                      const EdgeInsetsDirectional.fromSTEB(24.0, 0.0, 24.0, 24.0),
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                      24.0, 0.0, 24.0, 24.0),
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -252,8 +253,9 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                       context.pushNamed('AccountSettingsPage');
                                     },
                                     child: Padding(
-                                      padding: const EdgeInsetsDirectional.fromSTEB(
-                                          16.0, 16.0, 16.0, 16.0),
+                                      padding:
+                                          const EdgeInsetsDirectional.fromSTEB(
+                                              16.0, 16.0, 16.0, 16.0),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.max,
                                         mainAxisAlignment:
@@ -297,7 +299,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                                                 .fontStyle,
                                                       ),
                                                 ),
-                                              ].divide(const SizedBox(width: 12.0)),
+                                              ].divide(
+                                                  const SizedBox(width: 12.0)),
                                             ),
                                           ),
                                           Icon(
@@ -326,8 +329,9 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                       context.pushNamed('StorageAndDataPage');
                                     },
                                     child: Padding(
-                                      padding: const EdgeInsetsDirectional.fromSTEB(
-                                          16.0, 16.0, 16.0, 16.0),
+                                      padding:
+                                          const EdgeInsetsDirectional.fromSTEB(
+                                              16.0, 16.0, 16.0, 16.0),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.max,
                                         mainAxisAlignment:
@@ -371,7 +375,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                                                 .fontStyle,
                                                       ),
                                                 ),
-                                              ].divide(const SizedBox(width: 12.0)),
+                                              ].divide(
+                                                  const SizedBox(width: 12.0)),
                                             ),
                                           ),
                                           Icon(
@@ -400,8 +405,9 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                       context.pushNamed('HelpAndSupportPage');
                                     },
                                     child: Padding(
-                                      padding: const EdgeInsetsDirectional.fromSTEB(
-                                          16.0, 16.0, 16.0, 16.0),
+                                      padding:
+                                          const EdgeInsetsDirectional.fromSTEB(
+                                              16.0, 16.0, 16.0, 16.0),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.max,
                                         mainAxisAlignment:
@@ -445,7 +451,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                                                 .fontStyle,
                                                       ),
                                                 ),
-                                              ].divide(const SizedBox(width: 12.0)),
+                                              ].divide(
+                                                  const SizedBox(width: 12.0)),
                                             ),
                                           ),
                                           Icon(
@@ -466,8 +473,9 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                         FlutterFlowTheme.of(context).alternate,
                                   ),
                                   Padding(
-                                    padding: const EdgeInsetsDirectional.fromSTEB(
-                                        16.0, 16.0, 16.0, 16.0),
+                                    padding:
+                                        const EdgeInsetsDirectional.fromSTEB(
+                                            16.0, 16.0, 16.0, 16.0),
                                     child: InkWell(
                                       splashColor: Colors.transparent,
                                       focusColor: Colors.transparent,
@@ -480,7 +488,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                         mainAxisSize: MainAxisSize.max,
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
                                           Expanded(
                                             child: Row(
@@ -518,7 +527,8 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
                                                                 .fontStyle,
                                                       ),
                                                 ),
-                                              ].divide(const SizedBox(width: 12.0)),
+                                              ].divide(
+                                                  const SizedBox(width: 12.0)),
                                             ),
                                           ),
                                           Icon(
