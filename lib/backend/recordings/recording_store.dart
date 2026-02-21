@@ -4,8 +4,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'package:lectra/services/gemini_service.dart';
-
 class RecordingEntry {
   RecordingEntry({
     required this.id,
@@ -64,30 +62,44 @@ class RecordingStore {
     if (!dir.existsSync()) {
       return [];
     }
-    final files = dir
+    final metaFiles = dir
         .listSync()
         .whereType<File>()
         .where((f) => f.path.endsWith('.json'))
         .toList();
 
-    final entries = <RecordingEntry>[];
-    for (final file in files) {
+    final entriesById = <String, RecordingEntry>{};
+
+    for (final file in metaFiles) {
       try {
         final data = jsonDecode(await file.readAsString());
         if (data is Map<String, dynamic>) {
-          final entry = RecordingEntry.fromJson(data);
-          final audioExists = File(entry.audioPath).existsSync();
-          final notesExists = File(entry.notesPath).existsSync();
-          if (!audioExists && !notesExists) {
-            await deleteRecording(entry);
-            continue;
-          }
-          entries.add(entry);
+          final raw = RecordingEntry.fromJson(data);
+          final repaired = await _repairEntry(raw);
+          entriesById[repaired.id] = repaired;
         }
       } catch (_) {
         // Skip malformed entries.
       }
     }
+
+    // Recover recordings that have audio files but no metadata.
+    final audioFiles = dir
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.m4a'))
+        .toList();
+    for (final audio in audioFiles) {
+      final basePath = _stripExtension(audio.path);
+      final id = _fileName(basePath);
+      if (entriesById.containsKey(id)) {
+        continue;
+      }
+      final recovered = await _recoverEntryFromAudio(audio);
+      entriesById[recovered.id] = recovered;
+    }
+
+    final entries = entriesById.values.toList();
     entries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return entries;
   }
@@ -96,16 +108,25 @@ class RecordingStore {
     required String audioPath,
     required String transcript,
     required Duration duration,
-    required GeminiService geminiService,
+    String? notesOverride,
+    String? titleOverride,
   }) async {
     final createdAt = DateTime.now();
     final basePath = _stripExtension(audioPath);
     final notesPath = '$basePath.txt';
     final metaPath = '$basePath.json';
-    final title = _titleFromDate(createdAt);
+    final customTitle = titleOverride?.trim() ?? '';
+    final title =
+        customTitle.isNotEmpty ? customTitle : _titleFromDate(createdAt);
 
-    final notes = await geminiService.generateNotes(transcript);
-    await File(notesPath).writeAsString(notes);
+    var notes = (notesOverride ?? '').trim();
+    if (_looksLikeApiError(notes)) {
+      notes = '';
+    }
+    if (notes.isEmpty) {
+      notes = _buildLocalNotes(transcript);
+    }
+    await File(notesPath).writeAsString(notes, flush: true);
 
     final entry = RecordingEntry(
       id: _fileName(basePath),
@@ -114,9 +135,11 @@ class RecordingStore {
       duration: duration,
       audioPath: audioPath,
       notesPath: notesPath,
-      transcriptPreview: (transcript.length > 160) ? '${transcript.substring(0, 160)}...' : transcript,
+      transcriptPreview: (transcript.length > 160)
+          ? '${transcript.substring(0, 160)}...'
+          : transcript,
     );
-    await File(metaPath).writeAsString(jsonEncode(entry.toJson()));
+    await File(metaPath).writeAsString(jsonEncode(entry.toJson()), flush: true);
     return entry;
   }
 
@@ -183,5 +206,120 @@ class RecordingStore {
       return 'Unknown';
     }
     return months[month - 1];
+  }
+
+  static Future<RecordingEntry> _repairEntry(RecordingEntry entry) async {
+    final audioFile = File(entry.audioPath);
+    final fallbackBasePath =
+        entry.audioPath.trim().isEmpty ? '' : _stripExtension(entry.audioPath);
+    final resolvedNotesPath = entry.notesPath.trim().isNotEmpty
+        ? entry.notesPath
+        : (fallbackBasePath.isNotEmpty ? '$fallbackBasePath.txt' : '');
+    final notesFile =
+        resolvedNotesPath.isNotEmpty ? File(resolvedNotesPath) : null;
+
+    final audioExists = audioFile.existsSync();
+    final notesExists = notesFile?.existsSync() ?? false;
+
+    if (!audioExists && !notesExists) {
+      // Keep metadata visible; never auto-delete user recordings.
+      return entry;
+    }
+
+    if (!notesExists && notesFile != null) {
+      await notesFile.writeAsString(
+        _buildLocalNotes(entry.transcriptPreview),
+        flush: true,
+      );
+    }
+
+    // Keep entry id/title/dates stable to avoid disappearing rows.
+    if (resolvedNotesPath == entry.notesPath) {
+      return entry;
+    }
+    final repaired = RecordingEntry(
+      id: entry.id,
+      title: entry.title,
+      createdAt: entry.createdAt,
+      duration: entry.duration,
+      audioPath: entry.audioPath,
+      notesPath: resolvedNotesPath,
+      transcriptPreview: entry.transcriptPreview,
+    );
+    if (entry.audioPath.trim().isNotEmpty) {
+      final metaPath = '${_stripExtension(entry.audioPath)}.json';
+      await File(metaPath)
+          .writeAsString(jsonEncode(repaired.toJson()), flush: true);
+    }
+    return repaired;
+  }
+
+  static Future<RecordingEntry> _recoverEntryFromAudio(File audioFile) async {
+    final stat = await audioFile.stat();
+    final createdAt = stat.modified.toLocal();
+    final basePath = _stripExtension(audioFile.path);
+    final notesPath = '$basePath.txt';
+    final metaPath = '$basePath.json';
+    final title = _titleFromDate(createdAt);
+
+    final notesFile = File(notesPath);
+    if (!notesFile.existsSync()) {
+      await notesFile.writeAsString(_buildLocalNotes(''), flush: true);
+    }
+
+    final entry = RecordingEntry(
+      id: _fileName(basePath),
+      title: title,
+      createdAt: createdAt,
+      duration: Duration.zero,
+      audioPath: audioFile.path,
+      notesPath: notesPath,
+      transcriptPreview: '',
+    );
+    await File(metaPath).writeAsString(jsonEncode(entry.toJson()), flush: true);
+    return entry;
+  }
+
+  static String _buildLocalNotes(String transcript) {
+    final cleaned = transcript.trim();
+    if (cleaned.isEmpty) {
+      return [
+        '# Main Topics',
+        '- No transcript captured.',
+        '',
+        '# Key Definitions',
+        '- Not available.',
+        '',
+        '# Action Items',
+        '- Review recording and retry transcription.',
+      ].join('\n');
+    }
+
+    final preview =
+        cleaned.length > 1000 ? '${cleaned.substring(0, 1000)}...' : cleaned;
+    return [
+      '# Main Topics',
+      '- Generated from the captured transcript.',
+      '',
+      '# Key Definitions',
+      '- Extract key terms while reviewing the transcript.',
+      '',
+      '# Action Items',
+      '- Review and refine these notes as needed.',
+      '',
+      '# Transcript Excerpt',
+      preview,
+    ].join('\n');
+  }
+
+  static bool _looksLikeApiError(String text) {
+    if (text.isEmpty) {
+      return false;
+    }
+    final normalized = text.toLowerCase();
+    return normalized.contains('api key') ||
+        normalized.contains('api not valid') ||
+        normalized
+            .contains('exception occurred while trying to generate notes');
   }
 }

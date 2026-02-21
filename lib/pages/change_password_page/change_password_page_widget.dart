@@ -1,4 +1,5 @@
 import '/auth/supabase_auth/auth_util.dart';
+import '/backend/supabase/supabase.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -22,6 +23,7 @@ class _ChangePasswordPageWidgetState extends State<ChangePasswordPageWidget> {
   late ChangePasswordPageModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -38,6 +40,28 @@ class _ChangePasswordPageWidgetState extends State<ChangePasswordPageWidget> {
     _model.dispose();
 
     super.dispose();
+  }
+
+  Future<bool> _verifyCurrentPassword(String currentPassword) async {
+    final email = currentUserEmail.trim();
+    if (email.isEmpty) {
+      return false;
+    }
+    final verifier = SupabaseClient(SupaFlow.projectUrl, SupaFlow.anonKey);
+    try {
+      final response = await verifier.auth.signInWithPassword(
+        email: email,
+        password: currentPassword,
+      );
+      await verifier.auth.signOut();
+      return response.user != null;
+    } on AuthException {
+      return false;
+    } finally {
+      try {
+        await verifier.auth.signOut();
+      } catch (_) {}
+    }
   }
 
   @override
@@ -254,6 +278,26 @@ class _ChangePasswordPageWidgetState extends State<ChangePasswordPageWidget> {
                 padding: const EdgeInsetsDirectional.fromSTEB(0, 24, 0, 0),
                 child: FFButtonWidget(
                   onPressed: () async {
+                    if (_isSubmitting) {
+                      return;
+                    }
+                    final currentPassword =
+                        _model.currentPasswordController.text.trim();
+                    final newPassword =
+                        _model.newPasswordController.text.trim();
+                    final confirmPassword =
+                        _model.confirmPasswordController.text.trim();
+
+                    if (currentPassword.isEmpty ||
+                        newPassword.isEmpty ||
+                        confirmPassword.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('All password fields are required.'),
+                        ),
+                      );
+                      return;
+                    }
                     if (_model.newPasswordController.text !=
                         _model.confirmPasswordController.text) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -265,7 +309,45 @@ class _ChangePasswordPageWidgetState extends State<ChangePasswordPageWidget> {
                       );
                       return;
                     }
-                    final newPassword = _model.newPasswordController.text;
+                    if (newPassword.length < 6) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'New password must be at least 6 characters.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    if (currentPassword == newPassword) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'New password must be different from current password.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      _isSubmitting = true;
+                    });
+                    final isCurrentPasswordValid =
+                        await _verifyCurrentPassword(currentPassword);
+                    if (!context.mounted) {
+                      return;
+                    }
+                    if (!isCurrentPasswordValid) {
+                      setState(() {
+                        _isSubmitting = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Current password is incorrect.'),
+                        ),
+                      );
+                      return;
+                    }
                     final success = await authManager.updatePassword(
                       context: context,
                       newPassword: newPassword,
@@ -273,11 +355,17 @@ class _ChangePasswordPageWidgetState extends State<ChangePasswordPageWidget> {
                     if (!context.mounted) {
                       return;
                     }
+                    setState(() {
+                      _isSubmitting = false;
+                    });
                     if (success) {
+                      _model.currentPasswordController?.clear();
+                      _model.newPasswordController?.clear();
+                      _model.confirmPasswordController?.clear();
                       context.pop();
                     }
                   },
-                  text: 'Change Password',
+                  text: _isSubmitting ? 'Updating...' : 'Change Password',
                   options: FFButtonOptions(
                     width: double.infinity,
                     height: 50,

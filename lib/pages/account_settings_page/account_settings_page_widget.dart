@@ -1,4 +1,5 @@
 import '/auth/supabase_auth/auth_util.dart';
+import '/backend/supabase/supabase.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -9,7 +10,6 @@ import '/pages/change_password_page/change_password_page_widget.dart';
 import '/pages/update_email_page/update_email_page_widget.dart';
 import '/pages/sign_up_page/sign_up_page_widget.dart';
 import '/pages/edit_profile_page/edit_profile_page_widget.dart';
-import '/pages/home/home_widget.dart';
 
 class AccountSettingsPageWidget extends StatefulWidget {
   const AccountSettingsPageWidget({super.key});
@@ -26,11 +26,13 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
   late AccountSettingsPageModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _deletingAccount = false;
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => AccountSettingsPageModel());
+    _refreshUser();
   }
 
   @override
@@ -39,10 +41,160 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
     super.dispose();
   }
 
+  Future<void> _refreshUser() async {
+    await authManager.refreshUser();
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
+  }
+
+  Future<void> _deleteAccount() async {
+    if (_deletingAccount) {
+      return;
+    }
+    final passwordController = TextEditingController();
+    final currentPassword = await showDialog<String>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Delete Account'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'This action cannot be undone. Enter your current password to confirm.',
+                ),
+                const SizedBox(height: 12.0),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Current Password',
+                  ),
+                  onSubmitted: (value) =>
+                      Navigator.pop(dialogContext, value.trim()),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, ''),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(
+                    dialogContext, passwordController.text.trim()),
+                child: const Text('Continue'),
+              ),
+            ],
+          ),
+        ) ??
+        '';
+    passwordController.dispose();
+
+    if (currentPassword.isEmpty) {
+      return;
+    }
+
+    final isCurrentPasswordValid =
+        await _verifyCurrentPassword(currentPassword);
+    if (!mounted) {
+      return;
+    }
+    if (!isCurrentPasswordValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Current password is incorrect.')),
+      );
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Final Confirmation'),
+            content: const Text(
+              'Are you absolutely sure you want to permanently delete this account?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: FlutterFlowTheme.of(context).error),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirm) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _deletingAccount = true;
+    });
+
+    final deleted = await authManager.deleteUser(context);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _deletingAccount = false;
+    });
+
+    if (deleted || !loggedIn) {
+      context.goNamed(SignUpPageWidget.routeName);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Unable to delete account right now. Please contact support.',
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _verifyCurrentPassword(String currentPassword) async {
+    final email = currentUserEmail.trim();
+    if (email.isEmpty) {
+      return false;
+    }
+    final verifier = SupabaseClient(SupaFlow.projectUrl, SupaFlow.anonKey);
+    try {
+      final response = await verifier.auth.signInWithPassword(
+        email: email,
+        password: currentPassword,
+      );
+      await verifier.auth.signOut();
+      return response.user != null;
+    } on AuthException {
+      return false;
+    } finally {
+      try {
+        await verifier.auth.signOut();
+      } catch (_) {}
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final firstLetter =
         currentUserEmail.isNotEmpty ? currentUserEmail[0].toUpperCase() : '';
+    final displayName = currentUserDisplayName.isNotEmpty
+        ? currentUserDisplayName
+        : (currentUserEmail.isNotEmpty ? currentUserEmail : 'Lectra User');
 
     return GestureDetector(
       onTap: () => _model.unfocusNode.canRequestFocus
@@ -65,7 +217,7 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
               size: 30,
             ),
             onPressed: () async {
-              context.goNamed(HomeWidget.routeName);
+              context.safePop();
             },
           ),
           title: Text(
@@ -123,7 +275,7 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            currentUserDisplayName,
+                            displayName,
                             style: FlutterFlowTheme.of(context).headlineSmall,
                           ),
                           Text(
@@ -251,45 +403,7 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
                       focusColor: Colors.transparent,
                       hoverColor: Colors.transparent,
                       highlightColor: Colors.transparent,
-                      onTap: () async {
-                        var confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Delete Account'),
-                                content: const Text(
-                                    'Are you sure you want to delete your account? This action cannot be undone.'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    child: Text(
-                                      'Delete',
-                                      style: TextStyle(
-                                        color:
-                                            FlutterFlowTheme.of(context).error,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ) ??
-                            false;
-                        if (confirm) {
-                          if (!context.mounted) {
-                            return;
-                          }
-                          await authManager.deleteUser(context);
-                          if (!context.mounted) {
-                            return;
-                          }
-                          context.goNamed(SignUpPageWidget.routeName);
-                        }
-                      },
+                      onTap: _deleteAccount,
                       child: Row(
                         mainAxisSize: MainAxisSize.max,
                         children: [
@@ -312,6 +426,15 @@ class _AccountSettingsPageWidgetState extends State<AccountSettingsPageWidget> {
                                   ),
                             ),
                           ),
+                          if (_deletingAccount)
+                            SizedBox(
+                              width: 16.0,
+                              height: 16.0,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.0,
+                                color: FlutterFlowTheme.of(context).error,
+                              ),
+                            ),
                         ],
                       ),
                     ),

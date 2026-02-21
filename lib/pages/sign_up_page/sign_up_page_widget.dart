@@ -25,6 +25,7 @@ class SignUpPageWidget extends StatefulWidget {
 class _SignUpPageWidgetState extends State<SignUpPageWidget>
     with TickerProviderStateMixin {
   late SignUpPageModel _model;
+  final bool _showSocialAuthButtons = false;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -128,7 +129,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: Colors.white,
+        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         body: SafeArea(
           top: true,
           child: Row(
@@ -139,8 +140,8 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                 child: Container(
                   width: 100.0,
                   height: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: FlutterFlowTheme.of(context).secondaryBackground,
                   ),
                   alignment: const AlignmentDirectional(0.0, -1.0),
                   child: SingleChildScrollView(
@@ -156,8 +157,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                             constraints: const BoxConstraints(
                               maxWidth: 602.0,
                             ),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
+                            decoration: BoxDecoration(
+                              color: FlutterFlowTheme.of(context)
+                                  .secondaryBackground,
                               borderRadius: BorderRadius.only(
                                 bottomLeft: Radius.circular(16.0),
                                 bottomRight: Radius.circular(16.0),
@@ -189,7 +191,8 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       .headlineMedium
                                                       .fontStyle,
                                             ),
-                                            color: const Color(0xFF101213),
+                                            color: FlutterFlowTheme.of(context)
+                                                .primaryText,
                                             fontSize: 40.0,
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
@@ -211,8 +214,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                           constraints: const BoxConstraints(
                             maxWidth: 602.0,
                           ),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
+                          decoration: BoxDecoration(
+                            color: FlutterFlowTheme.of(context)
+                                .secondaryBackground,
                           ),
                           child: Padding(
                             padding: const EdgeInsetsDirectional.fromSTEB(
@@ -223,9 +227,11 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                   alignment: const Alignment(-1.0, 0),
                                   child: TabBar(
                                     isScrollable: true,
-                                    labelColor: const Color(0xFF101213),
+                                    labelColor: FlutterFlowTheme.of(context)
+                                        .primaryText,
                                     unselectedLabelColor:
-                                        const Color(0xFF57636C),
+                                        FlutterFlowTheme.of(context)
+                                            .secondaryText,
                                     labelPadding: const EdgeInsets.all(16.0),
                                     labelStyle: FlutterFlowTheme.of(context)
                                         .displaySmall
@@ -237,7 +243,8 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                     .displaySmall
                                                     .fontStyle,
                                           ),
-                                          color: const Color(0xFF101213),
+                                          color: FlutterFlowTheme.of(context)
+                                              .primaryText,
                                           fontSize: 36.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w600,
@@ -257,7 +264,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                         .displaySmall
                                                         .fontStyle,
                                               ),
-                                              color: const Color(0xFF101213),
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .primaryText,
                                               fontSize: 36.0,
                                               letterSpacing: 0.0,
                                               fontWeight: FontWeight.normal,
@@ -321,8 +330,10 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                   .labelMedium
                                                                   .fontStyle,
                                                         ),
-                                                        color: const Color(
-                                                            0xFF57636C),
+                                                        color:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .secondaryText,
                                                         fontSize: 14.0,
                                                         letterSpacing: 0.0,
                                                         fontWeight:
@@ -369,8 +380,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                       .labelMedium
                                                                       .fontStyle,
                                                                 ),
-                                                                color: const Color(
-                                                                    0xFF57636C),
+                                                                color: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .secondaryText,
                                                                 fontSize: 14.0,
                                                                 letterSpacing:
                                                                     0.0,
@@ -384,10 +396,10 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                               ),
                                                       enabledBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
-                                                          color:
-                                                              Color(0xFFE0E3E7),
+                                                        borderSide: BorderSide(
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .alternate,
                                                           width: 2.0,
                                                         ),
                                                         borderRadius:
@@ -396,8 +408,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFF4B39EF),
                                                           width: 2.0,
@@ -408,8 +419,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       errorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -420,8 +430,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedErrorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -431,7 +440,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                 .circular(40.0),
                                                       ),
                                                       filled: true,
-                                                      fillColor: Colors.white,
+                                                      fillColor: FlutterFlowTheme
+                                                              .of(context)
+                                                          .secondaryBackground,
                                                       contentPadding:
                                                           const EdgeInsets.all(
                                                               24.0),
@@ -450,8 +461,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .bodyMedium
                                                                     .fontStyle,
                                                           ),
-                                                          color: const Color(
-                                                              0xFF101213),
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .primaryText,
                                                           fontSize: 14.0,
                                                           letterSpacing: 0.0,
                                                           fontWeight:
@@ -507,8 +519,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                       .labelMedium
                                                                       .fontStyle,
                                                                 ),
-                                                                color: const Color(
-                                                                    0xFF57636C),
+                                                                color: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .secondaryText,
                                                                 fontSize: 14.0,
                                                                 letterSpacing:
                                                                     0.0,
@@ -522,10 +535,10 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                               ),
                                                       enabledBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
-                                                          color:
-                                                              Color(0xFFE0E3E7),
+                                                        borderSide: BorderSide(
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .alternate,
                                                           width: 2.0,
                                                         ),
                                                         borderRadius:
@@ -534,8 +547,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFF4B39EF),
                                                           width: 2.0,
@@ -546,8 +558,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       errorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -558,8 +569,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedErrorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -569,7 +579,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                 .circular(40.0),
                                                       ),
                                                       filled: true,
-                                                      fillColor: Colors.white,
+                                                      fillColor: FlutterFlowTheme
+                                                              .of(context)
+                                                          .secondaryBackground,
                                                       contentPadding:
                                                           const EdgeInsets.all(
                                                               24.0),
@@ -589,8 +601,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                   .visibility_outlined
                                                               : Icons
                                                                   .visibility_off_outlined,
-                                                          color: const Color(
-                                                              0xFF57636C),
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .secondaryText,
                                                           size: 24.0,
                                                         ),
                                                       ),
@@ -609,8 +622,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .bodyMedium
                                                                     .fontStyle,
                                                           ),
-                                                          color: const Color(
-                                                              0xFF101213),
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .primaryText,
                                                           fontSize: 14.0,
                                                           letterSpacing: 0.0,
                                                           fontWeight:
@@ -706,8 +720,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .fontStyle,
                                                               ),
                                                       elevation: 3.0,
-                                                      borderSide:
-                                                          const BorderSide(
+                                                      borderSide: BorderSide(
                                                         color:
                                                             Colors.transparent,
                                                         width: 1.0,
@@ -749,6 +762,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                           .resetPassword(
                                                         email: email,
                                                         context: context,
+                                                        redirectTo: isWeb
+                                                            ? null
+                                                            : 'lectra://lectra.com/reset-password',
                                                       );
                                                     },
                                                     text: 'Forgot Password',
@@ -763,7 +779,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                           const EdgeInsetsDirectional
                                                               .fromSTEB(0.0,
                                                               0.0, 0.0, 0.0),
-                                                      color: Colors.white,
+                                                      color: FlutterFlowTheme
+                                                              .of(context)
+                                                          .secondaryBackground,
                                                       textStyle:
                                                           FlutterFlowTheme.of(
                                                                   context)
@@ -779,8 +797,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                       .bodyMedium
                                                                       .fontStyle,
                                                                 ),
-                                                                color: const Color(
-                                                                    0xFF101213),
+                                                                color: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .primaryText,
                                                                 fontSize: 14.0,
                                                                 letterSpacing:
                                                                     0.0,
@@ -793,9 +812,11 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .fontStyle,
                                                               ),
                                                       elevation: 0.0,
-                                                      borderSide:
-                                                          const BorderSide(
-                                                        color: Colors.white,
+                                                      borderSide: BorderSide(
+                                                        color:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .alternate,
                                                         width: 2.0,
                                                       ),
                                                       borderRadius:
@@ -808,25 +829,43 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                               Column(
                                                 mainAxisSize: MainAxisSize.max,
                                                 children: [
-                                                  Align(
-                                                    alignment:
-                                                        const AlignmentDirectional(
-                                                            0.0, 0.0),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsetsDirectional
-                                                              .fromSTEB(16.0,
-                                                              0.0, 16.0, 24.0),
-                                                      child: Text(
-                                                        'Or sign up with',
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: FlutterFlowTheme
-                                                                .of(context)
-                                                            .labelMedium
-                                                            .override(
-                                                              font: GoogleFonts
-                                                                  .plusJakartaSans(
+                                                  if (_showSocialAuthButtons)
+                                                    Align(
+                                                      alignment:
+                                                          const AlignmentDirectional(
+                                                              0.0, 0.0),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsetsDirectional
+                                                                .fromSTEB(
+                                                                16.0,
+                                                                0.0,
+                                                                16.0,
+                                                                24.0),
+                                                        child: Text(
+                                                          'Or sign up with',
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .labelMedium
+                                                              .override(
+                                                                font: GoogleFonts
+                                                                    .plusJakartaSans(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                  fontStyle: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .labelMedium
+                                                                      .fontStyle,
+                                                                ),
+                                                                color: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .secondaryText,
+                                                                fontSize: 14.0,
+                                                                letterSpacing:
+                                                                    0.0,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .w500,
@@ -835,262 +874,251 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .labelMedium
                                                                     .fontStyle,
                                                               ),
-                                                              color: const Color(
-                                                                  0xFF57636C),
-                                                              fontSize: 14.0,
-                                                              letterSpacing:
-                                                                  0.0,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              fontStyle:
-                                                                  FlutterFlowTheme.of(
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  if (_showSocialAuthButtons)
+                                                    Align(
+                                                      alignment:
+                                                          const AlignmentDirectional(
+                                                              0.0, 0.0),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsetsDirectional
+                                                                .fromSTEB(0.0,
+                                                                0.0, 0.0, 16.0),
+                                                        child: Wrap(
+                                                          spacing: 16.0,
+                                                          runSpacing: 0.0,
+                                                          alignment:
+                                                              WrapAlignment
+                                                                  .center,
+                                                          crossAxisAlignment:
+                                                              WrapCrossAlignment
+                                                                  .center,
+                                                          direction:
+                                                              Axis.horizontal,
+                                                          runAlignment:
+                                                              WrapAlignment
+                                                                  .center,
+                                                          verticalDirection:
+                                                              VerticalDirection
+                                                                  .down,
+                                                          clipBehavior:
+                                                              Clip.none,
+                                                          children: [
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsetsDirectional
+                                                                      .fromSTEB(
+                                                                      0.0,
+                                                                      0.0,
+                                                                      0.0,
+                                                                      16.0),
+                                                              child:
+                                                                  FFButtonWidget(
+                                                                onPressed:
+                                                                    () async {
+                                                                  GoRouter.of(
                                                                           context)
-                                                                      .labelMedium
-                                                                      .fontStyle,
-                                                            ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Align(
-                                                    alignment:
-                                                        const AlignmentDirectional(
-                                                            0.0, 0.0),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsetsDirectional
-                                                              .fromSTEB(0.0,
-                                                              0.0, 0.0, 16.0),
-                                                      child: Wrap(
-                                                        spacing: 16.0,
-                                                        runSpacing: 0.0,
-                                                        alignment: WrapAlignment
-                                                            .center,
-                                                        crossAxisAlignment:
-                                                            WrapCrossAlignment
-                                                                .center,
-                                                        direction:
-                                                            Axis.horizontal,
-                                                        runAlignment:
-                                                            WrapAlignment
-                                                                .center,
-                                                        verticalDirection:
-                                                            VerticalDirection
-                                                                .down,
-                                                        clipBehavior: Clip.none,
-                                                        children: [
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsetsDirectional
-                                                                    .fromSTEB(
-                                                                    0.0,
-                                                                    0.0,
-                                                                    0.0,
-                                                                    16.0),
-                                                            child:
-                                                                FFButtonWidget(
-                                                              onPressed:
-                                                                  () async {
-                                                                GoRouter.of(
-                                                                        context)
-                                                                    .prepareAuthEvent();
-                                                                final user =
-                                                                    await authManager
-                                                                        .signInWithGoogle(
-                                                                            context);
-                                                                if (user ==
-                                                                    null) {
-                                                                  return;
-                                                                }
-                                                                if (!context
-                                                                    .mounted) {
-                                                                  return;
-                                                                }
-                                                                context.goNamedAuth(
-                                                                    HomeWidget
-                                                                        .routeName,
-                                                                    context
-                                                                        .mounted);
-                                                              },
-                                                              text:
-                                                                  'Continue with Google',
-                                                              icon:
-                                                                  const FaIcon(
-                                                                FontAwesomeIcons
-                                                                    .google,
-                                                                size: 20.0,
-                                                              ),
-                                                              options:
-                                                                  FFButtonOptions(
-                                                                width: 230.0,
-                                                                height: 44.0,
-                                                                padding:
-                                                                    const EdgeInsetsDirectional
-                                                                        .fromSTEB(
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0),
-                                                                iconPadding:
-                                                                    const EdgeInsetsDirectional
-                                                                        .fromSTEB(
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0),
-                                                                color: Colors
-                                                                    .white,
-                                                                textStyle: FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .override(
-                                                                      font: GoogleFonts
-                                                                          .plusJakartaSans(
+                                                                      .prepareAuthEvent();
+                                                                  final user =
+                                                                      await authManager
+                                                                          .signInWithGoogle(
+                                                                              context);
+                                                                  if (user ==
+                                                                      null) {
+                                                                    return;
+                                                                  }
+                                                                  if (!context
+                                                                      .mounted) {
+                                                                    return;
+                                                                  }
+                                                                  context.goNamedAuth(
+                                                                      HomeWidget
+                                                                          .routeName,
+                                                                      context
+                                                                          .mounted);
+                                                                },
+                                                                text:
+                                                                    'Continue with Google',
+                                                                icon:
+                                                                    const FaIcon(
+                                                                  FontAwesomeIcons
+                                                                      .google,
+                                                                  size: 20.0,
+                                                                ),
+                                                                options:
+                                                                    FFButtonOptions(
+                                                                  width: 230.0,
+                                                                  height: 44.0,
+                                                                  padding:
+                                                                      const EdgeInsetsDirectional
+                                                                          .fromSTEB(
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0),
+                                                                  iconPadding:
+                                                                      const EdgeInsetsDirectional
+                                                                          .fromSTEB(
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0),
+                                                                  color: Colors
+                                                                      .white,
+                                                                  textStyle: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .bodyMedium
+                                                                      .override(
+                                                                        font: GoogleFonts
+                                                                            .plusJakartaSans(
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontStyle: FlutterFlowTheme.of(context)
+                                                                              .bodyMedium
+                                                                              .fontStyle,
+                                                                        ),
+                                                                        color: FlutterFlowTheme.of(context)
+                                                                            .primaryText,
+                                                                        fontSize:
+                                                                            14.0,
+                                                                        letterSpacing:
+                                                                            0.0,
                                                                         fontWeight:
                                                                             FontWeight.bold,
                                                                         fontStyle: FlutterFlowTheme.of(context)
                                                                             .bodyMedium
                                                                             .fontStyle,
                                                                       ),
-                                                                      color: const Color(
-                                                                          0xFF101213),
-                                                                      fontSize:
-                                                                          14.0,
-                                                                      letterSpacing:
-                                                                          0.0,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                      fontStyle: FlutterFlowTheme.of(
-                                                                              context)
-                                                                          .bodyMedium
-                                                                          .fontStyle,
-                                                                    ),
-                                                                elevation: 0.0,
-                                                                borderSide:
-                                                                    const BorderSide(
-                                                                  color: Color(
-                                                                      0xFFE0E3E7),
-                                                                  width: 2.0,
+                                                                  elevation:
+                                                                      0.0,
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                    color: FlutterFlowTheme.of(
+                                                                            context)
+                                                                        .alternate,
+                                                                    width: 2.0,
+                                                                  ),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              40.0),
+                                                                  hoverColor: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .primaryBackground,
                                                                 ),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            40.0),
-                                                                hoverColor:
-                                                                    const Color(
-                                                                        0xFFF1F4F8),
                                                               ),
                                                             ),
-                                                          ),
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsetsDirectional
-                                                                    .fromSTEB(
-                                                                    0.0,
-                                                                    0.0,
-                                                                    0.0,
-                                                                    16.0),
-                                                            child:
-                                                                FFButtonWidget(
-                                                              onPressed:
-                                                                  () async {
-                                                                GoRouter.of(
-                                                                        context)
-                                                                    .prepareAuthEvent();
-                                                                final user =
-                                                                    await authManager
-                                                                        .signInWithApple(
-                                                                            context);
-                                                                if (user ==
-                                                                    null) {
-                                                                  return;
-                                                                }
-                                                                if (!context
-                                                                    .mounted) {
-                                                                  return;
-                                                                }
-                                                                context.goNamedAuth(
-                                                                    HomeWidget
-                                                                        .routeName,
-                                                                    context
-                                                                        .mounted);
-                                                              },
-                                                              text:
-                                                                  'Continue with Apple',
-                                                              icon:
-                                                                  const FaIcon(
-                                                                FontAwesomeIcons
-                                                                    .apple,
-                                                                size: 20.0,
-                                                              ),
-                                                              options:
-                                                                  FFButtonOptions(
-                                                                width: 230.0,
-                                                                height: 44.0,
-                                                                padding:
-                                                                    const EdgeInsetsDirectional
-                                                                        .fromSTEB(
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0),
-                                                                iconPadding:
-                                                                    const EdgeInsetsDirectional
-                                                                        .fromSTEB(
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0),
-                                                                color: Colors
-                                                                    .white,
-                                                                textStyle: FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .override(
-                                                                      font: GoogleFonts
-                                                                          .plusJakartaSans(
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsetsDirectional
+                                                                      .fromSTEB(
+                                                                      0.0,
+                                                                      0.0,
+                                                                      0.0,
+                                                                      16.0),
+                                                              child:
+                                                                  FFButtonWidget(
+                                                                onPressed:
+                                                                    () async {
+                                                                  GoRouter.of(
+                                                                          context)
+                                                                      .prepareAuthEvent();
+                                                                  final user =
+                                                                      await authManager
+                                                                          .signInWithApple(
+                                                                              context);
+                                                                  if (user ==
+                                                                      null) {
+                                                                    return;
+                                                                  }
+                                                                  if (!context
+                                                                      .mounted) {
+                                                                    return;
+                                                                  }
+                                                                  context.goNamedAuth(
+                                                                      HomeWidget
+                                                                          .routeName,
+                                                                      context
+                                                                          .mounted);
+                                                                },
+                                                                text:
+                                                                    'Continue with Apple',
+                                                                icon:
+                                                                    const FaIcon(
+                                                                  FontAwesomeIcons
+                                                                      .apple,
+                                                                  size: 20.0,
+                                                                ),
+                                                                options:
+                                                                    FFButtonOptions(
+                                                                  width: 230.0,
+                                                                  height: 44.0,
+                                                                  padding:
+                                                                      const EdgeInsetsDirectional
+                                                                          .fromSTEB(
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0),
+                                                                  iconPadding:
+                                                                      const EdgeInsetsDirectional
+                                                                          .fromSTEB(
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0),
+                                                                  color: Colors
+                                                                      .white,
+                                                                  textStyle: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .bodyMedium
+                                                                      .override(
+                                                                        font: GoogleFonts
+                                                                            .plusJakartaSans(
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontStyle: FlutterFlowTheme.of(context)
+                                                                              .bodyMedium
+                                                                              .fontStyle,
+                                                                        ),
+                                                                        color: FlutterFlowTheme.of(context)
+                                                                            .primaryText,
+                                                                        fontSize:
+                                                                            14.0,
+                                                                        letterSpacing:
+                                                                            0.0,
                                                                         fontWeight:
                                                                             FontWeight.bold,
                                                                         fontStyle: FlutterFlowTheme.of(context)
                                                                             .bodyMedium
                                                                             .fontStyle,
                                                                       ),
-                                                                      color: const Color(
-                                                                          0xFF101213),
-                                                                      fontSize:
-                                                                          14.0,
-                                                                      letterSpacing:
-                                                                          0.0,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                      fontStyle: FlutterFlowTheme.of(
-                                                                              context)
-                                                                          .bodyMedium
-                                                                          .fontStyle,
-                                                                    ),
-                                                                elevation: 0.0,
-                                                                borderSide:
-                                                                    const BorderSide(
-                                                                  color: Color(
-                                                                      0xFFE0E3E7),
-                                                                  width: 2.0,
+                                                                  elevation:
+                                                                      0.0,
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                    color: FlutterFlowTheme.of(
+                                                                            context)
+                                                                        .alternate,
+                                                                    width: 2.0,
+                                                                  ),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              40.0),
+                                                                  hoverColor: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .primaryBackground,
                                                                 ),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            40.0),
-                                                                hoverColor:
-                                                                    const Color(
-                                                                        0xFFF1F4F8),
                                                               ),
                                                             ),
-                                                          ),
-                                                        ],
+                                                          ],
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
                                                 ],
                                               ),
                                             ],
@@ -1130,8 +1158,10 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                   .labelMedium
                                                                   .fontStyle,
                                                         ),
-                                                        color: const Color(
-                                                            0xFF57636C),
+                                                        color:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .secondaryText,
                                                         fontSize: 14.0,
                                                         letterSpacing: 0.0,
                                                         fontWeight:
@@ -1178,8 +1208,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                       .labelMedium
                                                                       .fontStyle,
                                                                 ),
-                                                                color: const Color(
-                                                                    0xFF57636C),
+                                                                color: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .secondaryText,
                                                                 fontSize: 14.0,
                                                                 letterSpacing:
                                                                     0.0,
@@ -1193,10 +1224,10 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                               ),
                                                       enabledBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
-                                                          color:
-                                                              Color(0xFFE0E3E7),
+                                                        borderSide: BorderSide(
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .alternate,
                                                           width: 2.0,
                                                         ),
                                                         borderRadius:
@@ -1205,8 +1236,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFF4B39EF),
                                                           width: 2.0,
@@ -1217,8 +1247,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       errorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -1229,8 +1258,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedErrorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -1240,7 +1268,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                 .circular(40.0),
                                                       ),
                                                       filled: true,
-                                                      fillColor: Colors.white,
+                                                      fillColor: FlutterFlowTheme
+                                                              .of(context)
+                                                          .secondaryBackground,
                                                       contentPadding:
                                                           const EdgeInsets.all(
                                                               24.0),
@@ -1259,8 +1289,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .bodyMedium
                                                                     .fontStyle,
                                                           ),
-                                                          color: const Color(
-                                                              0xFF101213),
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .primaryText,
                                                           fontSize: 14.0,
                                                           letterSpacing: 0.0,
                                                           fontWeight:
@@ -1316,8 +1347,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                       .labelMedium
                                                                       .fontStyle,
                                                                 ),
-                                                                color: const Color(
-                                                                    0xFF57636C),
+                                                                color: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .secondaryText,
                                                                 fontSize: 14.0,
                                                                 letterSpacing:
                                                                     0.0,
@@ -1331,10 +1363,10 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                               ),
                                                       enabledBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
-                                                          color:
-                                                              Color(0xFFE0E3E7),
+                                                        borderSide: BorderSide(
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .alternate,
                                                           width: 2.0,
                                                         ),
                                                         borderRadius:
@@ -1343,8 +1375,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFF4B39EF),
                                                           width: 2.0,
@@ -1355,8 +1386,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       errorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -1367,8 +1397,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedErrorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -1378,7 +1407,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                 .circular(40.0),
                                                       ),
                                                       filled: true,
-                                                      fillColor: Colors.white,
+                                                      fillColor: FlutterFlowTheme
+                                                              .of(context)
+                                                          .secondaryBackground,
                                                       contentPadding:
                                                           const EdgeInsets.all(
                                                               24.0),
@@ -1398,8 +1429,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                   .visibility_outlined
                                                               : Icons
                                                                   .visibility_off_outlined,
-                                                          color: const Color(
-                                                              0xFF57636C),
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .secondaryText,
                                                           size: 24.0,
                                                         ),
                                                       ),
@@ -1418,8 +1450,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .bodyMedium
                                                                     .fontStyle,
                                                           ),
-                                                          color: const Color(
-                                                              0xFF101213),
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .primaryText,
                                                           fontSize: 14.0,
                                                           letterSpacing: 0.0,
                                                           fontWeight:
@@ -1474,8 +1507,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                       .labelMedium
                                                                       .fontStyle,
                                                                 ),
-                                                                color: const Color(
-                                                                    0xFF57636C),
+                                                                color: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .secondaryText,
                                                                 fontSize: 14.0,
                                                                 letterSpacing:
                                                                     0.0,
@@ -1489,10 +1523,10 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                               ),
                                                       enabledBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
-                                                          color:
-                                                              Color(0xFFE0E3E7),
+                                                        borderSide: BorderSide(
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .alternate,
                                                           width: 2.0,
                                                         ),
                                                         borderRadius:
@@ -1501,8 +1535,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFF4B39EF),
                                                           width: 2.0,
@@ -1513,8 +1546,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       errorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -1525,8 +1557,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                       ),
                                                       focusedErrorBorder:
                                                           OutlineInputBorder(
-                                                        borderSide:
-                                                            const BorderSide(
+                                                        borderSide: BorderSide(
                                                           color:
                                                               Color(0xFFFF5963),
                                                           width: 2.0,
@@ -1536,7 +1567,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                 .circular(40.0),
                                                       ),
                                                       filled: true,
-                                                      fillColor: Colors.white,
+                                                      fillColor: FlutterFlowTheme
+                                                              .of(context)
+                                                          .secondaryBackground,
                                                       contentPadding:
                                                           const EdgeInsets.all(
                                                               24.0),
@@ -1556,8 +1589,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                   .visibility_outlined
                                                               : Icons
                                                                   .visibility_off_outlined,
-                                                          color: const Color(
-                                                              0xFF57636C),
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .secondaryText,
                                                           size: 24.0,
                                                         ),
                                                       ),
@@ -1576,8 +1610,9 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .bodyMedium
                                                                     .fontStyle,
                                                           ),
-                                                          color: const Color(
-                                                              0xFF101213),
+                                                          color: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .primaryText,
                                                           fontSize: 14.0,
                                                           letterSpacing: 0.0,
                                                           fontWeight:
@@ -1690,8 +1725,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .fontStyle,
                                                               ),
                                                       elevation: 3.0,
-                                                      borderSide:
-                                                          const BorderSide(
+                                                      borderSide: BorderSide(
                                                         color:
                                                             Colors.transparent,
                                                         width: 1.0,
@@ -1706,25 +1740,43 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                               Column(
                                                 mainAxisSize: MainAxisSize.max,
                                                 children: [
-                                                  Align(
-                                                    alignment:
-                                                        const AlignmentDirectional(
-                                                            0.0, 0.0),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsetsDirectional
-                                                              .fromSTEB(16.0,
-                                                              0.0, 16.0, 24.0),
-                                                      child: Text(
-                                                        'Or sign up with',
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: FlutterFlowTheme
-                                                                .of(context)
-                                                            .labelMedium
-                                                            .override(
-                                                              font: GoogleFonts
-                                                                  .plusJakartaSans(
+                                                  if (_showSocialAuthButtons)
+                                                    Align(
+                                                      alignment:
+                                                          const AlignmentDirectional(
+                                                              0.0, 0.0),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsetsDirectional
+                                                                .fromSTEB(
+                                                                16.0,
+                                                                0.0,
+                                                                16.0,
+                                                                24.0),
+                                                        child: Text(
+                                                          'Or sign up with',
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: FlutterFlowTheme
+                                                                  .of(context)
+                                                              .labelMedium
+                                                              .override(
+                                                                font: GoogleFonts
+                                                                    .plusJakartaSans(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                  fontStyle: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .labelMedium
+                                                                      .fontStyle,
+                                                                ),
+                                                                color: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .secondaryText,
+                                                                fontSize: 14.0,
+                                                                letterSpacing:
+                                                                    0.0,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .w500,
@@ -1733,255 +1785,230 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                                                                     .labelMedium
                                                                     .fontStyle,
                                                               ),
-                                                              color: const Color(
-                                                                  0xFF57636C),
-                                                              fontSize: 14.0,
-                                                              letterSpacing:
-                                                                  0.0,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              fontStyle:
-                                                                  FlutterFlowTheme.of(
-                                                                          context)
-                                                                      .labelMedium
-                                                                      .fontStyle,
-                                                            ),
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
-                                                  Align(
-                                                    alignment:
-                                                        const AlignmentDirectional(
-                                                            0.0, 0.0),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsetsDirectional
-                                                              .fromSTEB(0.0,
-                                                              0.0, 0.0, 16.0),
-                                                      child: Wrap(
-                                                        spacing: 16.0,
-                                                        runSpacing: 0.0,
-                                                        alignment: WrapAlignment
-                                                            .center,
-                                                        crossAxisAlignment:
-                                                            WrapCrossAlignment
-                                                                .center,
-                                                        direction:
-                                                            Axis.horizontal,
-                                                        runAlignment:
-                                                            WrapAlignment
-                                                                .center,
-                                                        verticalDirection:
-                                                            VerticalDirection
-                                                                .down,
-                                                        clipBehavior: Clip.none,
-                                                        children: [
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsetsDirectional
-                                                                    .fromSTEB(
-                                                                    0.0,
-                                                                    0.0,
-                                                                    0.0,
-                                                                    16.0),
-                                                            child:
-                                                                FFButtonWidget(
-                                                              onPressed:
-                                                                  () async {
-                                                                GoRouter.of(
-                                                                        context)
-                                                                    .prepareAuthEvent();
-                                                                final user =
-                                                                    await authManager
-                                                                        .signInWithGoogle(
-                                                                            context);
-                                                                if (user ==
-                                                                    null) {
-                                                                  return;
-                                                                }
+                                                  if (_showSocialAuthButtons)
+                                                    Align(
+                                                      alignment:
+                                                          const AlignmentDirectional(
+                                                              0.0, 0.0),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsetsDirectional
+                                                                .fromSTEB(0.0,
+                                                                0.0, 0.0, 16.0),
+                                                        child: Wrap(
+                                                          spacing: 16.0,
+                                                          runSpacing: 0.0,
+                                                          alignment:
+                                                              WrapAlignment
+                                                                  .center,
+                                                          crossAxisAlignment:
+                                                              WrapCrossAlignment
+                                                                  .center,
+                                                          direction:
+                                                              Axis.horizontal,
+                                                          runAlignment:
+                                                              WrapAlignment
+                                                                  .center,
+                                                          verticalDirection:
+                                                              VerticalDirection
+                                                                  .down,
+                                                          clipBehavior:
+                                                              Clip.none,
+                                                          children: [
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsetsDirectional
+                                                                      .fromSTEB(
+                                                                      0.0,
+                                                                      0.0,
+                                                                      0.0,
+                                                                      16.0),
+                                                              child:
+                                                                  FFButtonWidget(
+                                                                onPressed:
+                                                                    () async {
+                                                                  GoRouter.of(
+                                                                          context)
+                                                                      .prepareAuthEvent();
+                                                                  final user =
+                                                                      await authManager
+                                                                          .signInWithGoogle(
+                                                                              context);
+                                                                  if (user ==
+                                                                      null) {
+                                                                    return;
+                                                                  }
 
-                                                                // ignore: use_build_context_synchronously
-                                                                context.goNamedAuth(
-                                                                    HomeWidget
-                                                                        .routeName,
-                                                                    context
-                                                                        .mounted);
-                                                              },
-                                                              text:
-                                                                  'Continue with Google',
-                                                              icon:
-                                                                  const FaIcon(
-                                                                FontAwesomeIcons
-                                                                    .google,
-                                                                size: 20.0,
-                                                              ),
-                                                              options:
-                                                                  FFButtonOptions(
-                                                                width: 230.0,
-                                                                height: 44.0,
-                                                                padding:
-                                                                    const EdgeInsetsDirectional
-                                                                        .fromSTEB(
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0),
-                                                                iconPadding:
-                                                                    const EdgeInsetsDirectional
-                                                                        .fromSTEB(
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0,
-                                                                        0.0),
-                                                                color: Colors
-                                                                    .white,
-                                                                textStyle: FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .override(
-                                                                      font: GoogleFonts
-                                                                          .plusJakartaSans(
-                                                                        fontWeight:
-                                                                            FontWeight.bold,
-                                                                        fontStyle: FlutterFlowTheme.of(context)
-                                                                            .bodyMedium
-                                                                            .fontStyle,
-                                                                      ),
-                                                                      color: const Color(
-                                                                          0xFF101213),
-                                                                      fontSize:
-                                                                          14.0,
-                                                                      letterSpacing:
-                                                                          0.0,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                      fontStyle: FlutterFlowTheme.of(
-                                                                              context)
-                                                                          .bodyMedium
-                                                                          .fontStyle,
-                                                                    ),
-                                                                elevation: 0.0,
-                                                                borderSide:
-                                                                    const BorderSide(
-                                                                  color: Color(
-                                                                      0xFFF1F4F8),
-                                                                  width: 2.0,
+                                                                  // ignore: use_build_context_synchronously
+                                                                  context.goNamedAuth(
+                                                                      HomeWidget
+                                                                          .routeName,
+                                                                      context
+                                                                          .mounted);
+                                                                },
+                                                                text:
+                                                                    'Continue with Google',
+                                                                icon:
+                                                                    const FaIcon(
+                                                                  FontAwesomeIcons
+                                                                      .google,
+                                                                  size: 20.0,
                                                                 ),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            40.0),
-                                                                hoverColor:
-                                                                    const Color(
-                                                                        0xFFF1F4F8),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          isAndroid
-                                                              ? Container()
-                                                              : Padding(
+                                                                options:
+                                                                    FFButtonOptions(
+                                                                  width: 230.0,
+                                                                  height: 44.0,
                                                                   padding:
                                                                       const EdgeInsetsDirectional
                                                                           .fromSTEB(
                                                                           0.0,
                                                                           0.0,
                                                                           0.0,
-                                                                          16.0),
-                                                                  child:
-                                                                      FFButtonWidget(
-                                                                    onPressed:
-                                                                        () async {
-                                                                      GoRouter.of(
-                                                                              context)
-                                                                          .prepareAuthEvent();
-                                                                      final user =
-                                                                          await authManager
-                                                                              .signInWithApple(context);
-                                                                      if (user ==
-                                                                          null) {
-                                                                        return;
-                                                                      }
+                                                                          0.0),
+                                                                  iconPadding:
+                                                                      const EdgeInsetsDirectional
+                                                                          .fromSTEB(
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0,
+                                                                          0.0),
+                                                                  color: Colors
+                                                                      .white,
+                                                                  textStyle: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .bodyMedium
+                                                                      .override(
+                                                                        font: GoogleFonts
+                                                                            .plusJakartaSans(
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontStyle: FlutterFlowTheme.of(context)
+                                                                              .bodyMedium
+                                                                              .fontStyle,
+                                                                        ),
+                                                                        color: FlutterFlowTheme.of(context)
+                                                                            .primaryText,
+                                                                        fontSize:
+                                                                            14.0,
+                                                                        letterSpacing:
+                                                                            0.0,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        fontStyle: FlutterFlowTheme.of(context)
+                                                                            .bodyMedium
+                                                                            .fontStyle,
+                                                                      ),
+                                                                  elevation:
+                                                                      0.0,
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                    color: FlutterFlowTheme.of(
+                                                                            context)
+                                                                        .primaryBackground,
+                                                                    width: 2.0,
+                                                                  ),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              40.0),
+                                                                  hoverColor: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .primaryBackground,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            isAndroid
+                                                                ? Container()
+                                                                : Padding(
+                                                                    padding: const EdgeInsetsDirectional
+                                                                        .fromSTEB(
+                                                                        0.0,
+                                                                        0.0,
+                                                                        0.0,
+                                                                        16.0),
+                                                                    child:
+                                                                        FFButtonWidget(
+                                                                      onPressed:
+                                                                          () async {
+                                                                        GoRouter.of(context)
+                                                                            .prepareAuthEvent();
+                                                                        final user =
+                                                                            await authManager.signInWithApple(context);
+                                                                        if (user ==
+                                                                            null) {
+                                                                          return;
+                                                                        }
 
-                                                                      // ignore: use_build_context_synchronously
-                                                                      context.goNamedAuth(
-                                                                          HomeWidget
-                                                                              .routeName,
-                                                                          context
-                                                                              .mounted);
-                                                                    },
-                                                                    text:
-                                                                        'Continue with Apple',
-                                                                    icon:
-                                                                        const FaIcon(
-                                                                      FontAwesomeIcons
-                                                                          .apple,
-                                                                      size:
-                                                                          20.0,
-                                                                    ),
-                                                                    options:
-                                                                        FFButtonOptions(
-                                                                      width:
-                                                                          230.0,
-                                                                      height:
-                                                                          44.0,
-                                                                      padding: const EdgeInsetsDirectional
-                                                                          .fromSTEB(
-                                                                          0.0,
-                                                                          0.0,
-                                                                          0.0,
-                                                                          0.0),
-                                                                      iconPadding: const EdgeInsetsDirectional
-                                                                          .fromSTEB(
-                                                                          0.0,
-                                                                          0.0,
-                                                                          0.0,
-                                                                          0.0),
-                                                                      color: Colors
-                                                                          .white,
-                                                                      textStyle: FlutterFlowTheme.of(
-                                                                              context)
-                                                                          .bodyMedium
-                                                                          .override(
-                                                                            font:
-                                                                                GoogleFonts.plusJakartaSans(
+                                                                        // ignore: use_build_context_synchronously
+                                                                        context.goNamedAuth(
+                                                                            HomeWidget.routeName,
+                                                                            context.mounted);
+                                                                      },
+                                                                      text:
+                                                                          'Continue with Apple',
+                                                                      icon:
+                                                                          const FaIcon(
+                                                                        FontAwesomeIcons
+                                                                            .apple,
+                                                                        size:
+                                                                            20.0,
+                                                                      ),
+                                                                      options:
+                                                                          FFButtonOptions(
+                                                                        width:
+                                                                            230.0,
+                                                                        height:
+                                                                            44.0,
+                                                                        padding: const EdgeInsetsDirectional
+                                                                            .fromSTEB(
+                                                                            0.0,
+                                                                            0.0,
+                                                                            0.0,
+                                                                            0.0),
+                                                                        iconPadding: const EdgeInsetsDirectional
+                                                                            .fromSTEB(
+                                                                            0.0,
+                                                                            0.0,
+                                                                            0.0,
+                                                                            0.0),
+                                                                        color: Colors
+                                                                            .white,
+                                                                        textStyle: FlutterFlowTheme.of(context)
+                                                                            .bodyMedium
+                                                                            .override(
+                                                                              font: GoogleFonts.plusJakartaSans(
+                                                                                fontWeight: FontWeight.bold,
+                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                              ),
+                                                                              color: FlutterFlowTheme.of(context).primaryText,
+                                                                              fontSize: 14.0,
+                                                                              letterSpacing: 0.0,
                                                                               fontWeight: FontWeight.bold,
                                                                               fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                             ),
-                                                                            color:
-                                                                                const Color(0xFF101213),
-                                                                            fontSize:
-                                                                                14.0,
-                                                                            letterSpacing:
-                                                                                0.0,
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                            fontStyle:
-                                                                                FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                          ),
-                                                                      elevation:
-                                                                          0.0,
-                                                                      borderSide:
-                                                                          const BorderSide(
-                                                                        color: Color(
-                                                                            0xFFF1F4F8),
-                                                                        width:
-                                                                            2.0,
+                                                                        elevation:
+                                                                            0.0,
+                                                                        borderSide:
+                                                                            BorderSide(
+                                                                          color:
+                                                                              FlutterFlowTheme.of(context).primaryBackground,
+                                                                          width:
+                                                                              2.0,
+                                                                        ),
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(40.0),
+                                                                        hoverColor:
+                                                                            FlutterFlowTheme.of(context).primaryBackground,
                                                                       ),
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              40.0),
-                                                                      hoverColor:
-                                                                          const Color(
-                                                                              0xFFF1F4F8),
                                                                     ),
                                                                   ),
-                                                                ),
-                                                        ],
+                                                          ],
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
                                                 ],
                                               ),
                                             ],
@@ -2012,7 +2039,7 @@ class _SignUpPageWidgetState extends State<SignUpPageWidget>
                     width: 100.0,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: FlutterFlowTheme.of(context).secondaryBackground,
                       image: const DecorationImage(
                         fit: BoxFit.cover,
                         image: CachedNetworkImageProvider(

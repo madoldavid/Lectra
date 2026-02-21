@@ -21,19 +21,34 @@ class SupabaseAuthManager extends AuthManager
   }
 
   @override
-  Future deleteUser(BuildContext context) async {
+  Future<bool> deleteUser(BuildContext context) async {
     try {
       if (!loggedIn) {
         // Error: delete user attempted with no logged in user!
-        return;
+        return false;
       }
       await currentUser?.delete();
+      await SupaFlow.client.auth.signOut();
+      currentUser = LectraSupabaseUser(null);
+      AppStateNotifier.instance.update(currentUser!);
+      return true;
     } on AuthException catch (e) {
-      if (!context.mounted) return;
+      if (!context.mounted) return false;
+      final message = e.message.toLowerCase().contains('not allowed')
+          ? 'Error: Account deletion requires backend delete permissions. Please contact support.'
+          : 'Error: ${e.message}';
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.message}')),
+        SnackBar(content: Text(message)),
       );
+      return false;
+    } catch (e) {
+      if (!context.mounted) return false;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+      return false;
     }
   }
 
@@ -48,6 +63,10 @@ class SupabaseAuthManager extends AuthManager
         return false;
       }
       await currentUser?.updateEmail(email);
+      await refreshUser();
+      if (currentUser != null) {
+        AppStateNotifier.instance.update(currentUser!);
+      }
     } on AuthException catch (e) {
       if (!context.mounted) return false;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -74,6 +93,10 @@ class SupabaseAuthManager extends AuthManager
         return false;
       }
       await currentUser?.updatePassword(newPassword);
+      await refreshUser();
+      if (currentUser != null) {
+        AppStateNotifier.instance.update(currentUser!);
+      }
     } on AuthException catch (e) {
       if (!context.mounted) return false;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -232,6 +255,14 @@ class SupabaseAuthManager extends AuthManager
     OAuthProvider provider,
   ) async {
     try {
+      final existingUser = SupaFlow.client.auth.currentUser;
+      if (existingUser != null) {
+        final authUser = LectraSupabaseUser(existingUser);
+        currentUser = authUser;
+        AppStateNotifier.instance.update(authUser);
+        return authUser;
+      }
+
       await SupaFlow.client.auth.signInWithOAuth(
         provider,
         redirectTo: isWeb ? null : _mobileRedirectUrl,
@@ -241,14 +272,21 @@ class SupabaseAuthManager extends AuthManager
         return null;
       }
 
-      final authState = await SupaFlow.client.auth.onAuthStateChange
-          .firstWhere((state) => state.session?.user != null)
-          .timeout(_oauthTimeout);
-      final user = authState.session?.user;
+      final user = await _waitForOAuthUser();
       final authUser = user == null ? null : LectraSupabaseUser(user);
       if (authUser != null) {
         currentUser = authUser;
         AppStateNotifier.instance.update(authUser);
+      } else {
+        if (!context.mounted) return null;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Google sign-in did not complete. Please try again.',
+            ),
+          ),
+        );
       }
       return authUser;
     } on TimeoutException {
@@ -266,5 +304,30 @@ class SupabaseAuthManager extends AuthManager
       );
       return null;
     }
+  }
+
+  Future<User?> _waitForOAuthUser() async {
+    try {
+      final authState = await SupaFlow.client.auth.onAuthStateChange
+          .firstWhere((state) => state.session?.user != null)
+          .timeout(const Duration(seconds: 20));
+      if (authState.session?.user != null) {
+        return authState.session!.user;
+      }
+    } on TimeoutException {
+      // Fall back to polling current session.
+    } catch (_) {
+      // Fall back to polling current session.
+    }
+
+    final deadline = DateTime.now().add(_oauthTimeout);
+    while (DateTime.now().isBefore(deadline)) {
+      final user = SupaFlow.client.auth.currentUser;
+      if (user != null) {
+        return user;
+      }
+      await Future.delayed(const Duration(milliseconds: 400));
+    }
+    return null;
   }
 }

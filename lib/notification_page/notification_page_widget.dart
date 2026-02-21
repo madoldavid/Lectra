@@ -1,5 +1,6 @@
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/services/notification_sync_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'notification_page_model.dart';
@@ -17,6 +18,7 @@ class NotificationPageWidget extends StatefulWidget {
 
 class _NotificationPageWidgetState extends State<NotificationPageWidget> {
   late NotificationPageModel _model;
+  final _service = NotificationSyncService.instance;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -24,13 +26,109 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => NotificationPageModel());
+    _service.start();
   }
 
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
+  }
+
+  Widget _buildNotificationRow(AppNotification item) {
+    return InkWell(
+      splashColor: Colors.transparent,
+      focusColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      onTap: () async {
+        await _service.markAsRead(item);
+      },
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: FlutterFlowTheme.of(context).secondaryBackground,
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Container(
+              width: 4.0,
+              height: 56.0,
+              decoration: BoxDecoration(
+                color: item.isRead
+                    ? FlutterFlowTheme.of(context).alternate
+                    : FlutterFlowTheme.of(context).primary,
+                borderRadius: BorderRadius.circular(2.0),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: FlutterFlowTheme.of(context).bodyLarge.override(
+                          font: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodyLarge
+                                .fontStyle,
+                          ),
+                          letterSpacing: 0.0,
+                          fontWeight: FontWeight.w600,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).bodyLarge.fontStyle,
+                        ),
+                  ),
+                  if (item.message.isNotEmpty)
+                    Text(
+                      item.message,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: FlutterFlowTheme.of(context).bodySmall.override(
+                            font: GoogleFonts.inter(
+                              fontWeight: FlutterFlowTheme.of(context)
+                                  .bodySmall
+                                  .fontWeight,
+                              fontStyle: FlutterFlowTheme.of(context)
+                                  .bodySmall
+                                  .fontStyle,
+                            ),
+                            color: FlutterFlowTheme.of(context).secondaryText,
+                            letterSpacing: 0.0,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodySmall
+                                .fontStyle,
+                          ),
+                    ),
+                ].divide(const SizedBox(height: 6.0)),
+              ),
+            ),
+            Text(
+              item.createdAt.year > 1970
+                  ? dateTimeFormat('relative', item.createdAt)
+                  : '',
+              style: FlutterFlowTheme.of(context).labelMedium.override(
+                    font: GoogleFonts.inter(
+                      fontWeight:
+                          FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                      fontStyle:
+                          FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                    ),
+                    color: FlutterFlowTheme.of(context).secondaryText,
+                    letterSpacing: 0.0,
+                    fontStyle:
+                        FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                  ),
+            ),
+          ].divide(const SizedBox(width: 12.0)),
+        ),
+      ),
+    );
   }
 
   @override
@@ -42,465 +140,101 @@ class _NotificationPageWidgetState extends State<NotificationPageWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: const Color(0xFFF1F4F8),
+        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
           automaticallyImplyLeading: false,
-          title: Align(
-            alignment: const AlignmentDirectional(0.0, 0.0),
-            child: Text(
-              'Notifications',
-              style: FlutterFlowTheme.of(context).headlineMedium.override(
-                    font: GoogleFonts.outfit(
-                      fontWeight: FontWeight.normal,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              color: FlutterFlowTheme.of(context).primaryText,
+            ),
+            onPressed: () async {
+              context.safePop();
+            },
+          ),
+          title: ValueListenableBuilder<List<AppNotification>>(
+            valueListenable: _service.notifications,
+            builder: (context, notifications, _) {
+              final unreadCount = notifications.where((n) => !n.isRead).length;
+              return Text(
+                unreadCount > 0
+                    ? 'Notifications ($unreadCount)'
+                    : 'Notifications',
+                style: FlutterFlowTheme.of(context).headlineMedium.override(
+                      font: GoogleFonts.interTight(
+                        fontWeight: FontWeight.w600,
+                        fontStyle: FlutterFlowTheme.of(context)
+                            .headlineMedium
+                            .fontStyle,
+                      ),
+                      letterSpacing: 0.0,
+                      fontWeight: FontWeight.w600,
                       fontStyle:
                           FlutterFlowTheme.of(context).headlineMedium.fontStyle,
                     ),
-                    color: const Color(0xFF14181B),
-                    fontSize: 24.0,
-                    letterSpacing: 0.0,
-                    fontWeight: FontWeight.normal,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                  ),
-            ),
+              );
+            },
           ),
-          actions: const [],
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await _service.markAllAsRead();
+              },
+              child: const Text('Mark all'),
+            ),
+          ],
           centerTitle: false,
           elevation: 0.0,
         ),
-        body: ListView(
-          padding: EdgeInsets.zero,
-          scrollDirection: Axis.vertical,
-          children: [
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: const [
-                    BoxShadow(
-                      blurRadius: 0.0,
-                      color: Color(0xFFE0E3E7),
-                      offset: Offset(
-                        0.0,
-                        1.0,
-                      ),
-                    )
-                  ],
-                  borderRadius: BorderRadius.circular(0.0),
-                  shape: BoxShape.rectangle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        width: 4.0,
-                        height: 50.0,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4B39EF),
-                          borderRadius: BorderRadius.circular(2.0),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              12.0, 0.0, 0.0, 0.0),
-                          child: Text(
-                            'Check-in evaluated',
-                            style:
-                                FlutterFlowTheme.of(context).bodyLarge.override(
-                                      font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FontWeight.normal,
+        body: SafeArea(
+          top: true,
+          child: Padding(
+            padding:
+                const EdgeInsetsDirectional.fromSTEB(20.0, 8.0, 20.0, 20.0),
+            child: ValueListenableBuilder<List<AppNotification>>(
+              valueListenable: _service.notifications,
+              builder: (context, notifications, _) {
+                return RefreshIndicator(
+                  onRefresh: _service.refreshFromServer,
+                  child: notifications.isEmpty
+                      ? ListView(
+                          children: [
+                            const SizedBox(height: 200),
+                            Center(
+                              child: Text(
+                                'No notifications yet.',
+                                style: FlutterFlowTheme.of(context)
+                                    .bodyMedium
+                                    .override(
+                                      font: GoogleFonts.inter(
+                                        fontWeight: FlutterFlowTheme.of(context)
+                                            .bodyMedium
+                                            .fontWeight,
                                         fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyLarge
+                                            .bodyMedium
                                             .fontStyle,
                                       ),
-                                      color: const Color(0xFF14181B),
-                                      fontSize: 16.0,
+                                      color: FlutterFlowTheme.of(context)
+                                          .secondaryText,
                                       letterSpacing: 0.0,
-                                      fontWeight: FontWeight.normal,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyLarge
-                                          .fontStyle,
                                     ),
-                          ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          padding: EdgeInsets.zero,
+                          itemCount: notifications.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10.0),
+                          itemBuilder: (context, index) =>
+                              _buildNotificationRow(notifications[index]),
                         ),
-                      ),
-                      Padding(
-                        padding:
-                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
-                        child: Text(
-                          'Mar 8, 2022',
-                          style:
-                              FlutterFlowTheme.of(context).labelMedium.override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FontWeight.normal,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    color: const Color(0xFF57636C),
-                                    fontSize: 14.0,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.normal,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                );
+              },
             ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: const [
-                    BoxShadow(
-                      blurRadius: 0.0,
-                      color: Color(0xFFE0E3E7),
-                      offset: Offset(
-                        0.0,
-                        1.0,
-                      ),
-                    )
-                  ],
-                  borderRadius: BorderRadius.circular(0.0),
-                  shape: BoxShape.rectangle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        width: 4.0,
-                        height: 50.0,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4B39EF),
-                          borderRadius: BorderRadius.circular(2.0),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              12.0, 0.0, 0.0, 0.0),
-                          child: Text(
-                            'Check-in evaluated',
-                            style:
-                                FlutterFlowTheme.of(context).bodyLarge.override(
-                                      font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FontWeight.normal,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyLarge
-                                            .fontStyle,
-                                      ),
-                                      color: const Color(0xFF14181B),
-                                      fontSize: 16.0,
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.normal,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyLarge
-                                          .fontStyle,
-                                    ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
-                        child: Text(
-                          'Mar 8, 2022',
-                          style:
-                              FlutterFlowTheme.of(context).labelMedium.override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FontWeight.normal,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    color: const Color(0xFF57636C),
-                                    fontSize: 14.0,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.normal,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: const [
-                    BoxShadow(
-                      blurRadius: 0.0,
-                      color: Color(0xFFE0E3E7),
-                      offset: Offset(
-                        0.0,
-                        1.0,
-                      ),
-                    )
-                  ],
-                  borderRadius: BorderRadius.circular(0.0),
-                  shape: BoxShape.rectangle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        width: 4.0,
-                        height: 50.0,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4B39EF),
-                          borderRadius: BorderRadius.circular(2.0),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              12.0, 0.0, 0.0, 0.0),
-                          child: Text(
-                            'Check-in evaluated',
-                            style:
-                                FlutterFlowTheme.of(context).bodyLarge.override(
-                                      font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FontWeight.normal,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyLarge
-                                            .fontStyle,
-                                      ),
-                                      color: const Color(0xFF14181B),
-                                      fontSize: 16.0,
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.normal,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyLarge
-                                          .fontStyle,
-                                    ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
-                        child: Text(
-                          'Mar 8, 2022',
-                          style:
-                              FlutterFlowTheme.of(context).labelMedium.override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FontWeight.normal,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    color: const Color(0xFF57636C),
-                                    fontSize: 14.0,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.normal,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F4F8),
-                  boxShadow: const [
-                    BoxShadow(
-                      blurRadius: 0.0,
-                      color: Color(0xFFE0E3E7),
-                      offset: Offset(
-                        0.0,
-                        1.0,
-                      ),
-                    )
-                  ],
-                  borderRadius: BorderRadius.circular(0.0),
-                  shape: BoxShape.rectangle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        width: 4.0,
-                        height: 50.0,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE0E3E7),
-                          borderRadius: BorderRadius.circular(2.0),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              12.0, 0.0, 0.0, 0.0),
-                          child: Text(
-                            'New Event added to your calendar',
-                            style: FlutterFlowTheme.of(context)
-                                .labelLarge
-                                .override(
-                                  font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: FontWeight.normal,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .labelLarge
-                                        .fontStyle,
-                                  ),
-                                  color: const Color(0xFF57636C),
-                                  fontSize: 16.0,
-                                  letterSpacing: 0.0,
-                                  fontWeight: FontWeight.normal,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .labelLarge
-                                      .fontStyle,
-                                ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
-                        child: Text(
-                          'Mar 8, 2022',
-                          style:
-                              FlutterFlowTheme.of(context).labelMedium.override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FontWeight.normal,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    color: const Color(0xFF57636C),
-                                    fontSize: 14.0,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.normal,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 1.0),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F4F8),
-                  boxShadow: const [
-                    BoxShadow(
-                      blurRadius: 0.0,
-                      color: Color(0xFFE0E3E7),
-                      offset: Offset(
-                        0.0,
-                        1.0,
-                      ),
-                    )
-                  ],
-                  borderRadius: BorderRadius.circular(0.0),
-                  shape: BoxShape.rectangle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        width: 4.0,
-                        height: 50.0,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE0E3E7),
-                          borderRadius: BorderRadius.circular(2.0),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              12.0, 0.0, 0.0, 0.0),
-                          child: Text(
-                            'Profile Modified',
-                            style: FlutterFlowTheme.of(context)
-                                .labelLarge
-                                .override(
-                                  font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: FontWeight.normal,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .labelLarge
-                                        .fontStyle,
-                                  ),
-                                  color: const Color(0xFF57636C),
-                                  fontSize: 16.0,
-                                  letterSpacing: 0.0,
-                                  fontWeight: FontWeight.normal,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .labelLarge
-                                      .fontStyle,
-                                ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            const EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 0.0, 0.0),
-                        child: Text(
-                          'Mar 8, 2022',
-                          style:
-                              FlutterFlowTheme.of(context).labelMedium.override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FontWeight.normal,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    color: const Color(0xFF57636C),
-                                    fontSize: 14.0,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.normal,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

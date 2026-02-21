@@ -14,6 +14,8 @@ class SupaFlow {
 
   final _supabase = Supabase.instance.client;
   static SupabaseClient get client => instance._supabase;
+  static String get projectUrl => _kSupabaseUrl;
+  static String get anonKey => _kSupabaseAnonKey;
 
   static Future initialize() => Supabase.initialize(
         url: _kSupabaseUrl,
@@ -22,6 +24,7 @@ class SupaFlow {
         },
         anonKey: _kSupabaseAnonKey,
         debug: false,
-        authOptions: const FlutterAuthClientOptions(authFlowType: AuthFlowType.pkce),
+        authOptions:
+            const FlutterAuthClientOptions(authFlowType: AuthFlowType.pkce),
       );
 }

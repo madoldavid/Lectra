@@ -1,4 +1,5 @@
 import '/auth/supabase_auth/auth_util.dart';
+import '/backend/supabase/supabase.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -21,6 +22,9 @@ class _UpdateEmailPageWidgetState extends State<UpdateEmailPageWidget> {
   late UpdateEmailPageModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  late TextEditingController _currentPasswordController;
+  bool _currentPasswordVisibility = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -28,13 +32,37 @@ class _UpdateEmailPageWidgetState extends State<UpdateEmailPageWidget> {
     _model = createModel(context, () => UpdateEmailPageModel());
 
     _model.newEmailController ??= TextEditingController();
+    _currentPasswordController = TextEditingController();
   }
 
   @override
   void dispose() {
+    _currentPasswordController.dispose();
     _model.dispose();
 
     super.dispose();
+  }
+
+  Future<bool> _verifyCurrentPassword(String currentPassword) async {
+    final email = currentUserEmail.trim();
+    if (email.isEmpty) {
+      return false;
+    }
+    final verifier = SupabaseClient(SupaFlow.projectUrl, SupaFlow.anonKey);
+    try {
+      final response = await verifier.auth.signInWithPassword(
+        email: email,
+        password: currentPassword,
+      );
+      await verifier.auth.signOut();
+      return response.user != null;
+    } on AuthException {
+      return false;
+    } finally {
+      try {
+        await verifier.auth.signOut();
+      } catch (_) {}
+    }
   }
 
   @override
@@ -80,6 +108,61 @@ class _UpdateEmailPageWidgetState extends State<UpdateEmailPageWidget> {
             mainAxisSize: MainAxisSize.max,
             children: [
               TextFormField(
+                controller: _currentPasswordController,
+                obscureText: !_currentPasswordVisibility,
+                decoration: InputDecoration(
+                  labelText: 'Current Password',
+                  hintText: 'Enter your current password',
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: FlutterFlowTheme.of(context).alternate,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: FlutterFlowTheme.of(context).primary,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: FlutterFlowTheme.of(context).error,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: FlutterFlowTheme.of(context).error,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  suffixIcon: InkWell(
+                    onTap: () => setState(
+                      () => _currentPasswordVisibility =
+                          !_currentPasswordVisibility,
+                    ),
+                    focusNode: FocusNode(skipTraversal: true),
+                    child: Icon(
+                      _currentPasswordVisibility
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: const Color(0xFF757575),
+                      size: 22,
+                    ),
+                  ),
+                ),
+                style: FlutterFlowTheme.of(context).bodyMedium.override(
+                      fontFamily: 'Readex Pro',
+                      letterSpacing: 0,
+                    ),
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
                 controller: _model.newEmailController,
                 decoration: InputDecoration(
                   labelText: 'New Email',
@@ -122,7 +205,20 @@ class _UpdateEmailPageWidgetState extends State<UpdateEmailPageWidget> {
                 padding: const EdgeInsetsDirectional.fromSTEB(0, 24, 0, 0),
                 child: FFButtonWidget(
                   onPressed: () async {
-                    final newEmail = _model.newEmailController.text;
+                    if (_isSubmitting) {
+                      return;
+                    }
+                    final currentPassword =
+                        _currentPasswordController.text.trim();
+                    final newEmail = _model.newEmailController.text.trim();
+                    if (currentPassword.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Current password is required.'),
+                        ),
+                      );
+                      return;
+                    }
                     if (newEmail.isEmpty ||
                         !RegExp(r'^[a-zA-Z0-9_\.-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
                             .hasMatch(newEmail)) {
@@ -135,6 +231,36 @@ class _UpdateEmailPageWidgetState extends State<UpdateEmailPageWidget> {
                       );
                       return;
                     }
+                    if (newEmail.toLowerCase() ==
+                        currentUserEmail.trim().toLowerCase()) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'New email must be different from current email.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      _isSubmitting = true;
+                    });
+                    final isCurrentPasswordValid =
+                        await _verifyCurrentPassword(currentPassword);
+                    if (!context.mounted) {
+                      return;
+                    }
+                    if (!isCurrentPasswordValid) {
+                      setState(() {
+                        _isSubmitting = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Current password is incorrect.'),
+                        ),
+                      );
+                      return;
+                    }
                     final success = await authManager.updateEmail(
                       context: context,
                       email: newEmail,
@@ -142,11 +268,16 @@ class _UpdateEmailPageWidgetState extends State<UpdateEmailPageWidget> {
                     if (!context.mounted) {
                       return;
                     }
+                    setState(() {
+                      _isSubmitting = false;
+                    });
                     if (success) {
+                      _currentPasswordController.clear();
+                      _model.newEmailController?.clear();
                       context.pop();
                     }
                   },
-                  text: 'Update Email',
+                  text: _isSubmitting ? 'Updating...' : 'Update Email',
                   options: FFButtonOptions(
                     width: double.infinity,
                     height: 50,

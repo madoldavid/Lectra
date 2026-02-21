@@ -26,6 +26,7 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
   @override
   void initState() {
     super.initState();
+    authManager.refreshUser();
     _displayNameController =
         TextEditingController(text: currentUserDisplayName);
   }
@@ -36,13 +37,24 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
     final file = File(_imageFile!.path);
     final fileExtension = _imageFile!.path.split('.').last;
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-    final filePath = 'public/profile_pictures/$fileName';
+    final userId = currentUserUid.isNotEmpty
+        ? currentUserUid
+        : DateTime.now().millisecondsSinceEpoch.toString();
+    final filePath = 'public/profile_pictures/$userId/$fileName';
 
     try {
-      await SupaFlow.client.storage.from('user_files').upload(filePath, file);
+      await SupaFlow.client.storage.from('user_files').upload(
+            filePath,
+            file,
+            fileOptions: const FileOptions(upsert: true),
+          );
       return SupaFlow.client.storage.from('user_files').getPublicUrl(filePath);
     } catch (e) {
-      // Handle error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image: $e')),
+        );
+      }
       return null;
     }
   }
@@ -64,8 +76,20 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
         updateData['full_name'] = newDisplayName;
       }
 
-      if (updateData.isNotEmpty) {
-        await authManager.updateCurrentUser(updateData);
+      try {
+        if (updateData.isNotEmpty) {
+          await authManager.updateCurrentUser(updateData);
+        }
+      } on AuthException catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Unable to update profile: ${e.message}')),
+          );
+        }
+        setState(() {
+          _isLoading = false;
+        });
+        return;
       }
 
       setState(() {
@@ -75,6 +99,9 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
       if (!mounted) {
         return;
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully.')),
+      );
       context.pop();
     }
   }
@@ -124,7 +151,7 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
                         labelText: 'Display Name',
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
+                        if (value == null || value.trim().isEmpty) {
                           return 'Please enter a display name';
                         }
                         return null;

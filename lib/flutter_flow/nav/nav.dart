@@ -26,7 +26,7 @@ class AppStateNotifier extends ChangeNotifier {
 
   BaseAuthUser? initialUser;
   BaseAuthUser? user;
-  bool showSplashImage = true;
+  bool showSplashImage = false;
   String? _redirectLocation;
 
   /// Determines whether the app will refresh and build again when a sign
@@ -106,6 +106,11 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => const SignUpPageWidget(),
         ),
         FFRoute(
+          name: ResetPasswordPageWidget.routeName,
+          path: ResetPasswordPageWidget.routePath,
+          builder: (context, params) => const ResetPasswordPageWidget(),
+        ),
+        FFRoute(
           name: NotesPageWidget.routeName,
           path: NotesPageWidget.routePath,
           builder: (context, params) => const NotesPageWidget(),
@@ -145,7 +150,17 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: HelpAndSupportPageWidget.routeName,
           path: HelpAndSupportPageWidget.routePath,
           builder: (context, params) => const HelpAndSupportPageWidget(),
-        )
+        ),
+        FFRoute(
+          name: ChangePasswordPageWidget.routeName,
+          path: ChangePasswordPageWidget.routePath,
+          builder: (context, params) => const ChangePasswordPageWidget(),
+        ),
+        FFRoute(
+          name: UpdateEmailPageWidget.routeName,
+          path: UpdateEmailPageWidget.routePath,
+          builder: (context, params) => const UpdateEmailPageWidget(),
+        ),
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
     );
 

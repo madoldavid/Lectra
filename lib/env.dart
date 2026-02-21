@@ -1,2 +1,1 @@
-// IMPORTANT: Replace with your actual Gemini API key.
-const geminiApiKey = 'YOUR_API_KEY';
+const geminiApiKey = 'AIzaSyBGbLjVvPTwJlEJQN9u2CZg6f_F4pB6EA8';

@@ -1,8 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import 'package:lectra/services/gemini_service.dart';
-import 'package:lectra/env.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -13,6 +12,8 @@ import 'auth/supabase_auth/auth_util.dart';
 import '/backend/supabase/supabase.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import 'flutter_flow/flutter_flow_util.dart';
+import '/pages/reset_password_page/reset_password_page_widget.dart';
+import '/services/notification_sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,12 +27,9 @@ void main() async {
   final appState = AppStateNotifier.instance;
   await appState.initializePersistedState();
 
-  final geminiService = GeminiService(geminiApiKey);
-
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (context) => appState),
-      Provider<GeminiService>.value(value: geminiService),
     ],
     child: const MyApp(),
   ));
@@ -55,6 +53,7 @@ class _MyAppState extends State<MyApp> {
   late GoRouter _router;
 
   late Stream<BaseAuthUser> userStream;
+  StreamSubscription<AuthState>? _passwordRecoverySubscription;
 
   @override
   void initState() {
@@ -68,8 +67,21 @@ class _MyAppState extends State<MyApp> {
     userStream = lectraSupabaseUserStream()
       ..listen((user) {
         _appStateNotifier.update(user);
+        NotificationSyncService.instance.handleAuthChanged();
       });
+    _passwordRecoverySubscription =
+        SupaFlow.client.auth.onAuthStateChange.listen((authState) {
+      if (authState.event != AuthChangeEvent.passwordRecovery) {
+        return;
+      }
+      final currentLocation = _router.getCurrentLocation();
+      if (currentLocation.startsWith(ResetPasswordPageWidget.routePath)) {
+        return;
+      }
+      _router.pushNamed(ResetPasswordPageWidget.routeName);
+    });
     jwtTokenStream.listen((_) {});
+    NotificationSyncService.instance.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_appStateNotifier.showSplashImage) {
         _appStateNotifier.stopShowingSplashImage();
@@ -84,6 +96,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    _passwordRecoverySubscription?.cancel();
+    NotificationSyncService.instance.stop();
     super.dispose();
   }
 

@@ -1,5 +1,6 @@
-
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:rxdart/rxdart.dart';
 
@@ -32,7 +33,75 @@ class LectraSupabaseUser extends BaseAuthUser {
       );
 
   @override
-  Future? delete() => SupaFlow.client.auth.admin.deleteUser(user!.id);
+  Future? delete() async {
+    if (user == null) {
+      return;
+    }
+
+    // Preferred: project-level edge function using service role on backend.
+    try {
+      await SupaFlow.client.functions.invoke(
+        'delete-user',
+        body: {'user_id': user!.id},
+      );
+      return;
+    } catch (_) {
+      // Continue with fallback strategies.
+    }
+
+    try {
+      await _deleteSelfViaAuthApi();
+      return;
+    } catch (_) {
+      // Fallback to admin API (will require elevated backend credentials).
+    }
+
+    await SupaFlow.client.auth.admin.deleteUser(user!.id);
+  }
+
+  Future<void> _deleteSelfViaAuthApi() async {
+    final accessToken = SupaFlow.client.auth.currentSession?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      throw const AuthException('No active session.');
+    }
+
+    final client = HttpClient();
+    try {
+      Future<void> sendDeleteRequest(Map<String, dynamic>? body) async {
+        final request = await client
+            .deleteUrl(Uri.parse('${SupaFlow.projectUrl}/auth/v1/user'));
+        request.headers
+            .set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
+        request.headers.set('apikey', SupaFlow.anonKey);
+        request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+        if (body != null) {
+          request.add(utf8.encode(jsonEncode(body)));
+        }
+        final response = await request.close();
+        final responseBody = await utf8.decoder.bind(response).join();
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          throw AuthException(
+            'Delete failed (${response.statusCode}): $responseBody',
+          );
+        }
+      }
+
+      // Try multiple compatible payload variants for different GoTrue versions.
+      try {
+        await sendDeleteRequest({'should_soft_delete': false});
+        return;
+      } catch (_) {}
+
+      try {
+        await sendDeleteRequest({'should_soft_delete': true});
+        return;
+      } catch (_) {}
+
+      await sendDeleteRequest(null);
+    } finally {
+      client.close(force: true);
+    }
+  }
 
   @override
   Future? updateEmail(String email) async {
@@ -54,8 +123,8 @@ class LectraSupabaseUser extends BaseAuthUser {
   }
 
   @override
-  Future? sendEmailVerification() => SupaFlow.client.auth
-      .resend(type: OtpType.signup, email: user!.email!);
+  Future? sendEmailVerification() =>
+      SupaFlow.client.auth.resend(type: OtpType.signup, email: user!.email!);
 
   @override
   bool get emailVerified {
