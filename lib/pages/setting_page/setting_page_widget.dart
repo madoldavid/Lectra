@@ -118,7 +118,7 @@ class _SettingPageWidgetState extends State<SettingPageWidget> {
               size: 30,
             ),
             onPressed: () async {
-              context.goNamed(HomeWidget.routeName);
+              context.safePop();
             },
           ),
           title: Align(

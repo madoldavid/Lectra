@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -120,6 +121,76 @@ class _MyAppState extends State<MyApp> {
           .map((e) => getRoute(e as RouteMatch))
           .toList();
 
+  ThemeData _buildTheme(Brightness brightness) {
+    final ffTheme =
+        brightness == Brightness.dark ? DarkModeTheme() : LightModeTheme();
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: ffTheme.primary,
+      brightness: brightness,
+      primary: ffTheme.primary,
+      secondary: ffTheme.secondary,
+      surface: ffTheme.secondaryBackground,
+      error: ffTheme.error,
+    );
+
+    return ThemeData(
+      brightness: brightness,
+      useMaterial3: false,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: ffTheme.primaryBackground,
+      splashColor: ffTheme.primary.withValues(alpha: 0.08),
+      hoverColor: ffTheme.primary.withValues(alpha: 0.06),
+      splashFactory: InkSparkle.splashFactory,
+      highlightColor: Colors.transparent,
+      appBarTheme: AppBarTheme(
+        backgroundColor: ffTheme.primaryBackground,
+        foregroundColor: ffTheme.primaryText,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: ffTheme.titleLarge,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: ffTheme.secondaryBackground,
+        modalBackgroundColor: ffTheme.secondaryBackground,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+        ),
+      ),
+      cardColor: ffTheme.secondaryBackground,
+      dialogTheme: DialogThemeData(
+        backgroundColor: ffTheme.secondaryBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: ffTheme.secondaryBackground,
+        contentTextStyle: ffTheme.bodyMedium.override(
+          color: ffTheme.primaryText,
+        ),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+      cupertinoOverrideTheme: CupertinoThemeData(
+        brightness: brightness,
+        primaryColor: ffTheme.primary,
+        scaffoldBackgroundColor: ffTheme.primaryBackground,
+        barBackgroundColor: ffTheme.primaryBackground,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
@@ -131,14 +202,8 @@ class _MyAppState extends State<MyApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('en', '')],
-      theme: ThemeData(
-        brightness: Brightness.light,
-        useMaterial3: false,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        useMaterial3: false,
-      ),
+      theme: _buildTheme(Brightness.light),
+      darkTheme: _buildTheme(Brightness.dark),
       themeMode: _themeMode,
       routerConfig: _router,
     );

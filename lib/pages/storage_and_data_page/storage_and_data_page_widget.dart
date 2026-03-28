@@ -389,34 +389,32 @@ class _StorageAndDataPageWidgetState extends State<StorageAndDataPageWidget> {
         key: scaffoldKey,
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).primary,
+          backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
-            borderRadius: 30,
+            borderRadius: 20,
             borderWidth: 1,
-            buttonSize: 60,
-            icon: const Icon(
+            buttonSize: 40,
+            icon: Icon(
               Icons.arrow_back_rounded,
-              color: Colors.white,
-              size: 30,
+              color: FlutterFlowTheme.of(context).primaryText,
+              size: 24,
             ),
             onPressed: () async {
-              context.pop();
+              context.safePop();
             },
           ),
           title: Text(
             'Storage and Data',
             style: FlutterFlowTheme.of(context).headlineMedium.override(
-                  fontFamily: 'Outfit',
-                  color: Colors.white,
-                  fontSize: 22,
-                  letterSpacing: 0,
+                  color: FlutterFlowTheme.of(context).primaryText,
+                  letterSpacing: 0.0,
                 ),
           ),
           actions: const [],
           centerTitle: false,
-          elevation: 2,
+          elevation: 0,
         ),
         body: SafeArea(
           top: true,

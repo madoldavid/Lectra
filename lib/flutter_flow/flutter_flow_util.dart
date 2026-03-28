@@ -13,7 +13,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart';
 
-
 export 'keep_alive_wrapper.dart';
 export 'lat_lng.dart';
 export 'place.dart';
@@ -46,6 +45,24 @@ Future launchURL(String url) async {
   } catch (e) {
     throw 'Could not launch $uri: $e';
   }
+}
+
+Future<void> hapticSelection() async {
+  if (kIsWeb) {
+    return;
+  }
+  try {
+    await HapticFeedback.selectionClick();
+  } catch (_) {}
+}
+
+Future<void> hapticLight() async {
+  if (kIsWeb) {
+    return;
+  }
+  try {
+    await HapticFeedback.lightImpact();
+  } catch (_) {}
 }
 
 Color colorFromCssString(String color, {Color? defaultColor}) {

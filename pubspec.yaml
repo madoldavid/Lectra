@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.0.1+2
+version: 1.0.3+23
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -33,13 +33,13 @@ dependencies:
   collection: ^1.19.1
   flutter_animate: ^4.5.0
   flutter_cache_manager: ^3.4.1
-  font_awesome_flutter: ^10.7.0
+  font_awesome_flutter: ^11.0.0
   from_css_color: ^2.0.0
   go_router: ^17.1.0
   google_fonts: ^8.0.1
   hive: ^2.2.3
   intl: ^0.20.2
-  json_path: ^0.8.0
+  json_path: ^0.9.0
   just_audio: ^0.10.5
   page_transition: ^2.1.0
   path_provider: ^2.1.4
@@ -47,12 +47,18 @@ dependencies:
   record: ^6.2.0
   rxdart: ^0.28.0
   shared_preferences: ^2.5.3
-  speech_to_text: ^7.3.0
+  share_plus: ^12.0.1
+  pdf: ^3.10.7
+  archive: ^4.0.9
+  http: ^1.2.2
+  path: ^1.9.0
   sign_in_with_apple: ^7.0.1
   sqflite: ^2.3.3+1
   supabase_flutter: ^2.9.0
   timeago: ^3.7.1
   url_launcher: ^6.3.1
+  in_app_update: ^4.2.2
+  in_app_review: ^2.0.8
   webview_flutter: ^4.13.0
 
   # The following adds the Cupertino Icons font to your application.
@@ -60,12 +66,18 @@ dependencies:
   cupertino_icons: ^1.0.0
   image_picker: ^1.2.1
   google_generative_ai: ^0.4.7
+  whisper_ggml: ^1.7.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0
   lints: ^6.1.0
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
+
+dependency_overrides:
+  ffmpeg_kit_flutter_new_min: ^3.1.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

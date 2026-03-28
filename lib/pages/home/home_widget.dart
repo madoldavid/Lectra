@@ -1,18 +1,21 @@
 import '/services/local_pcm_recording_service.dart';
 import '/services/gemini_service.dart';
-import '/env.dart';
+import '/services/whisper_transcription_service.dart';
+import '/services/battery_optimization_service.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import '/backend/recordings/recording_store.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:share_plus/share_plus.dart';
+import 'package:in_app_update/in_app_update.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'home_model.dart';
 export 'home_model.dart';
 
@@ -26,35 +29,50 @@ class HomeWidget extends StatefulWidget {
   State<HomeWidget> createState() => _HomeWidgetState();
 }
 
-class _HomeWidgetState extends State<HomeWidget> {
+class _HomeWidgetState extends State<HomeWidget>
+    with SingleTickerProviderStateMixin {
   late HomeModel _model;
   late LocalPcmRecordingService _recordingService;
+  late WhisperTranscriptionService _transcriptionService;
+  late final AnimationController _recordingPulseController;
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final stt.SpeechToText _speech = stt.SpeechToText();
   Timer? _recordingTimer;
   Duration _recordingDuration = Duration.zero;
   bool _isRecording = false;
   bool _isProcessing = false;
-  bool _speechAvailable = false;
-  bool _speechListening = false;
-  String _finalTranscript = '';
-  String _liveTranscript = '';
   List<RecordingEntry> _recordings = [];
   bool _loadingRecordings = true;
+  bool _batteryPromptHandled = false;
+  bool _playUpdateChecked = false;
+  bool _reviewPromptShown = false;
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => HomeModel());
     _recordingService = LocalPcmRecordingService();
+    _transcriptionService = WhisperTranscriptionService();
+    _recordingPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    unawaited(
+      _transcriptionService.ensureModelReady().catchError((_) {
+        // Model setup will retry on first transcription attempt.
+      }),
+    );
     _loadRecordings();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeCheckPlayUpdate();
+      _scheduleReviewPrompt();
+    });
   }
 
   @override
   void dispose() {
     _recordingTimer?.cancel();
-    _speech.stop();
+    _recordingPulseController.dispose();
     _recordingService.dispose();
     _model.dispose();
 
@@ -65,20 +83,18 @@ class _HomeWidgetState extends State<HomeWidget> {
     if (_isRecording) {
       return;
     }
+    await _maybeHandleBatteryOptimization();
 
     final recordingsDir = await _ensureRecordingsDir();
     final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-    final audioPath = '${recordingsDir.path}/lecture_$timestamp.m4a';
+    final audioPath = '${recordingsDir.path}/lecture_$timestamp.wav';
 
     setState(() {
-      _finalTranscript = '';
-      _liveTranscript = '';
       _recordingDuration = Duration.zero;
     });
 
     try {
       await _recordingService.startRecording(wavOutputPath: audioPath);
-      await _startSpeechToText();
     } catch (e) {
       if (!mounted) {
         return;
@@ -95,7 +111,56 @@ class _HomeWidgetState extends State<HomeWidget> {
     setState(() {
       _isRecording = true;
     });
+    _recordingPulseController.repeat();
     _startRecordingTimer();
+  }
+
+  Future<void> _maybeHandleBatteryOptimization() async {
+    if (!isAndroid || _batteryPromptHandled) {
+      return;
+    }
+    _batteryPromptHandled = true;
+
+    final isIgnoring =
+        await BatteryOptimizationService.isIgnoringBatteryOptimizations();
+    if (isIgnoring || !mounted) {
+      return;
+    }
+
+    final action = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Allow background recording'),
+        content: const Text(
+          'To keep recording when the screen locks or when you switch apps, allow Lectra to ignore battery optimization.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop('later'),
+            child: const Text('Not now'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop('settings'),
+            child: const Text('Open settings'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop('allow'),
+            child: const Text('Allow'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || action == null || action == 'later') {
+      return;
+    }
+
+    if (action == 'settings') {
+      await BatteryOptimizationService.openBatteryOptimizationSettings();
+      return;
+    }
+
+    await BatteryOptimizationService.requestIgnoreBatteryOptimizations();
   }
 
   Future<void> _stopRecording() async {
@@ -107,11 +172,9 @@ class _HomeWidgetState extends State<HomeWidget> {
       _isRecording = false;
       _isProcessing = true;
     });
+    _recordingPulseController.stop();
+    _recordingPulseController.reset();
     _recordingTimer?.cancel();
-    if (_speechListening) {
-      await _speech.stop();
-      _speechListening = false;
-    }
 
     String audioPath;
     double maxAmplitudeDb;
@@ -131,26 +194,40 @@ class _HomeWidgetState extends State<HomeWidget> {
       return;
     }
 
-    final geminiService = GeminiService(geminiApiKey);
-    var aiResult = const LectureNotesResult(notes: '', transcript: '');
     try {
-      aiResult = await geminiService.generateNotesFromAudio(audioPath);
-    } catch (_) {
-      // If AI processing fails, save recording locally with fallback notes.
-    }
+      await _waitForAudioFileToStabilize(audioPath);
 
-    var transcript = aiResult.transcript.trim();
-    if (transcript.isEmpty) {
-      transcript = _combinedTranscript;
-    }
-    var notes = aiResult.notes.trim();
-    if (notes.isEmpty && transcript.isNotEmpty) {
-      notes = await geminiService.generateNotes(transcript);
-    }
-    _finalTranscript = transcript;
-    final titleOverride = await _promptForRecordingTitle();
+      final geminiService = GeminiService();
+      String transcript = '';
+      String notes = '';
+      Object? transcriptionError;
+      Object? notesError;
 
-    try {
+      try {
+        transcript = await _transcriptionService
+            .transcribeFile(audioPath)
+            .timeout(_transcriptionTimeoutFor(_recordingDuration));
+      } catch (e) {
+        transcriptionError = e;
+      }
+
+      if (transcript.isNotEmpty) {
+        try {
+          notes = await geminiService
+              .generateNotes(transcript)
+              .timeout(_notesTimeoutForTranscript(transcript));
+        } catch (e) {
+          notesError = e;
+        }
+      }
+
+      String? titleOverride;
+      try {
+        titleOverride = await _promptForRecordingTitle();
+      } catch (_) {
+        titleOverride = null;
+      }
+
       if (!mounted) {
         return;
       }
@@ -176,15 +253,18 @@ class _HomeWidgetState extends State<HomeWidget> {
                 ? 'Recording saved and notes generated.'
                 : (maxAmplitudeDb < -45.0
                     ? 'Recording saved, but microphone signal was too low. Check emulator mic input.'
-                    : 'Recording saved locally. AI returned no transcript.'),
+                    : (transcriptionError != null
+                        ? 'Recording saved locally. No transcript captured. ${transcriptionError is TimeoutException ? 'Transcription timed out.' : 'Please try again.'}'
+                        : (notesError != null
+                            ? 'Recording saved, transcript captured, but note structuring failed. Local fallback notes were saved.'
+                            : 'Recording saved locally. No transcript captured.'))),
           ),
         ),
       );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Recording saved, but note generation failed: $e')),
+          SnackBar(content: Text('Stop recording failed: $e')),
         );
       }
     } finally {
@@ -196,6 +276,45 @@ class _HomeWidgetState extends State<HomeWidget> {
     }
   }
 
+  Future<void> _maybeCheckPlayUpdate() async {
+    if (_playUpdateChecked || !mounted) return;
+    _playUpdateChecked = true;
+    if (!Platform.isAndroid) return;
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability ==
+          UpdateAvailability.updateAvailable) {
+        await InAppUpdate.performImmediateUpdate();
+      }
+    } catch (_) {
+      // Silent fail; don't block UX if Play Core check fails.
+    }
+  }
+
+  void _scheduleReviewPrompt() {
+    if (_reviewPromptShown) return;
+    _reviewPromptShown = true;
+    Future.delayed(const Duration(seconds: 5), () async {
+      if (!mounted || !Platform.isAndroid) return;
+      try {
+        final review = InAppReview.instance;
+        final available = await review.isAvailable();
+        if (available) {
+          await review.requestReview();
+        } else {
+          await review.openStoreListing(
+            appStoreId: null,
+            microsoftStoreId: null,
+          );
+        }
+      } catch (_) {
+        // Ignore failures; we don't block UX.
+      }
+    });
+  }
+
+  // (In-app update handles the flow; no manual store launch needed now.)
+
   Future<Directory> _ensureRecordingsDir() async {
     final root = await getApplicationDocumentsDirectory();
     final dir = Directory('${root.path}/recordings');
@@ -203,6 +322,43 @@ class _HomeWidgetState extends State<HomeWidget> {
       dir.createSync(recursive: true);
     }
     return dir;
+  }
+
+  Future<void> _waitForAudioFileToStabilize(String audioPath) async {
+    final file = File(audioPath);
+    var lastSize = -1;
+    for (var i = 0; i < 6; i++) {
+      if (!file.existsSync()) {
+        await Future.delayed(const Duration(milliseconds: 120));
+        continue;
+      }
+      final currentSize = file.lengthSync();
+      if (currentSize > 4096 && currentSize == lastSize) {
+        return;
+      }
+      lastSize = currentSize;
+      await Future.delayed(const Duration(milliseconds: 120));
+    }
+  }
+
+  Duration _transcriptionTimeoutFor(Duration recordingDuration) {
+    final minutes = recordingDuration.inMinutes;
+    // Base 6 minutes + ~45 seconds per recorded minute, capped at 70 minutes.
+    final seconds = 360 + (minutes * 45);
+    final boundedSeconds = seconds.clamp(360, 4200).toInt();
+    return Duration(seconds: boundedSeconds);
+  }
+
+  Duration _notesTimeoutForTranscript(String transcript) {
+    final cleanedLength = transcript.trim().length;
+    if (cleanedLength <= 0) {
+      return const Duration(seconds: 90);
+    }
+    // Roughly align with chunked prompts (about 4.5k chars each).
+    final estimatedChunks = (cleanedLength / 4500).ceil().clamp(1, 60).toInt();
+    final seconds = 90 + (estimatedChunks * 45);
+    final boundedSeconds = seconds.clamp(90, 1500).toInt();
+    return Duration(seconds: boundedSeconds);
   }
 
   void _startRecordingTimer() {
@@ -232,94 +388,14 @@ class _HomeWidgetState extends State<HomeWidget> {
     if (!mounted) {
       return null;
     }
-    final controller = TextEditingController(text: _defaultRecordingTitle());
+    final defaultTitle = _defaultRecordingTitle();
     final title = await showDialog<String>(
       context: context,
       barrierDismissible: true,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Name this recording'),
-        content: TextField(
-          controller: controller,
-          maxLength: 80,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'e.g. Physics Lecture 4',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(''),
-            child: const Text('Use default'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(controller.text.trim()),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+      useRootNavigator: true,
+      builder: (_) => _RecordingNameDialog(defaultTitle: defaultTitle),
     );
-    controller.dispose();
     return title;
-  }
-
-  String get _transcriptPreview {
-    final text = _combinedTranscript;
-    if (text.length <= 180) {
-      return text;
-    }
-    return '${text.substring(0, 180)}...';
-  }
-
-  String get _combinedTranscript => [_finalTranscript, _liveTranscript]
-      .where((e) => e.trim().isNotEmpty)
-      .join(' ')
-      .trim();
-
-  Future<void> _startSpeechToText() async {
-    _speechAvailable = await _speech.initialize(
-      onStatus: _handleSpeechStatus,
-      onError: (_) {},
-    );
-    if (!_speechAvailable || _speechListening) {
-      return;
-    }
-    _speechListening = true;
-    await _speech.listen(
-      onResult: _onSpeechResult,
-      listenFor: const Duration(hours: 2),
-      pauseFor: const Duration(seconds: 3),
-      localeId: 'en_US',
-      listenOptions: stt.SpeechListenOptions(
-        partialResults: true,
-      ),
-    );
-  }
-
-  void _handleSpeechStatus(String status) {
-    if (status == 'done') {
-      _speechListening = false;
-      if (_isRecording) {
-        _startSpeechToText();
-      }
-    }
-  }
-
-  void _onSpeechResult(SpeechRecognitionResult result) {
-    if (!mounted) {
-      return;
-    }
-    if (result.finalResult) {
-      final text = result.recognizedWords.trim();
-      if (text.isNotEmpty) {
-        _finalTranscript =
-            [_finalTranscript, text].where((e) => e.isNotEmpty).join(' ');
-      }
-      _liveTranscript = '';
-    } else {
-      _liveTranscript = result.recognizedWords;
-    }
-    setState(() {});
   }
 
   Future<void> _loadRecordings() async {
@@ -347,6 +423,201 @@ class _HomeWidgetState extends State<HomeWidget> {
     );
   }
 
+  Future<void> _renameRecording(RecordingEntry entry) async {
+    final controller = TextEditingController(text: entry.title);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rename recording'),
+        content: TextField(
+          controller: controller,
+          maxLength: 80,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Enter recording name',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    final newTitle = result?.trim() ?? '';
+    if (newTitle.isEmpty || newTitle == entry.title) {
+      return;
+    }
+
+    await RecordingStore.updateRecordingTitle(entry: entry, newTitle: newTitle);
+    await _loadRecordings();
+  }
+
+  Future<void> _deleteRecording(RecordingEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Move To Trash'),
+        content: const Text(
+          'This recording will be moved to Trash. You can restore it from Library > Trash.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Move'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return;
+    }
+
+    await _moveRecordingToTrash(entry, allowUndo: false);
+  }
+
+  Future<void> _moveRecordingToTrash(
+    RecordingEntry entry, {
+    bool allowUndo = true,
+  }) async {
+    final trashedEntry = await RecordingStore.moveToTrash(entry);
+    await _loadRecordings();
+    if (!mounted || !allowUndo) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('"${entry.title}" moved to Trash'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () async {
+            await RecordingStore.restoreFromTrash(trashedEntry);
+            await _loadRecordings();
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _shareRecording(RecordingEntry entry) async {
+    final file = File(entry.audioPath);
+    if (!file.existsSync()) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Recording file not found.')),
+      );
+      return;
+    }
+
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(entry.audioPath)],
+          subject: entry.title,
+          text: 'Lecture recording: ${entry.title}',
+        ),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to share recording: $e')),
+      );
+    }
+  }
+
+  Future<void> _onRecordingMenuSelected(
+    RecordingEntry entry,
+    String action,
+  ) async {
+    await hapticSelection();
+    switch (action) {
+      case 'open':
+        _openRecording(entry);
+        return;
+      case 'rename':
+        await _renameRecording(entry);
+        return;
+      case 'delete':
+        await _deleteRecording(entry);
+        return;
+      case 'share':
+        await _shareRecording(entry);
+        return;
+    }
+  }
+
+  Future<void> _showRecordingActionsSheet(RecordingEntry entry) async {
+    await hapticSelection();
+    if (!mounted) {
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.open_in_new_rounded),
+              title: const Text('Open'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _openRecording(entry);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Rename'),
+              onTap: () async {
+                Navigator.of(sheetContext).pop();
+                await _renameRecording(entry);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Share'),
+              onTap: () async {
+                Navigator.of(sheetContext).pop();
+                await _shareRecording(entry);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.delete_outline_rounded,
+                color: FlutterFlowTheme.of(context).error,
+              ),
+              title: Text(
+                'Move to Trash',
+                style: TextStyle(color: FlutterFlowTheme.of(context).error),
+              ),
+              onTap: () async {
+                Navigator.of(sheetContext).pop();
+                await _deleteRecording(entry);
+              },
+            ),
+            const SizedBox(height: 8.0),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLectureCard(RecordingEntry entry) {
     return InkWell(
       splashColor: Colors.transparent,
@@ -354,6 +625,7 @@ class _HomeWidgetState extends State<HomeWidget> {
       hoverColor: Colors.transparent,
       highlightColor: Colors.transparent,
       onTap: () => _openRecording(entry),
+      onLongPress: () => _showRecordingActionsSheet(entry),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -429,10 +701,31 @@ class _HomeWidgetState extends State<HomeWidget> {
                   ],
                 ),
               ),
-              Icon(
-                Icons.more_vert_rounded,
-                color: FlutterFlowTheme.of(context).secondaryText,
-                size: 20.0,
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  color: FlutterFlowTheme.of(context).secondaryText,
+                  size: 20.0,
+                ),
+                onSelected: (value) => _onRecordingMenuSelected(entry, value),
+                itemBuilder: (context) => const [
+                  PopupMenuItem<String>(
+                    value: 'open',
+                    child: Text('Open'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'rename',
+                    child: Text('Rename'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Text('Move to Trash'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'share',
+                    child: Text('Share'),
+                  ),
+                ],
               ),
             ].divide(const SizedBox(width: 12)),
           ),
@@ -441,7 +734,7 @@ class _HomeWidgetState extends State<HomeWidget> {
     );
   }
 
-  Widget _buildRecentLecturesList() {
+  Widget _buildRecentLecturesList({double bottomPadding = 0.0}) {
     if (_loadingRecordings) {
       return Center(
         child: Text(
@@ -474,16 +767,38 @@ class _HomeWidgetState extends State<HomeWidget> {
       );
     }
 
-    final recentLectures = _recordings.take(3).toList();
-
-    return ListView(
-      padding: EdgeInsets.zero,
-      primary: false,
-      scrollDirection: Axis.vertical,
-      children: recentLectures
-          .map(_buildLectureCard)
-          .toList()
-          .divide(const SizedBox(height: 12)),
+    return ListView.separated(
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      itemCount: _recordings.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12.0),
+      itemBuilder: (context, index) {
+        final entry = _recordings[index];
+        return Dismissible(
+          key: ValueKey('home_recording_${entry.id}'),
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (_) async {
+            await hapticLight();
+            await _moveRecordingToTrash(entry);
+            return false;
+          },
+          background: Container(
+            alignment: AlignmentDirectional.centerEnd,
+            padding: const EdgeInsetsDirectional.only(end: 20.0),
+            decoration: BoxDecoration(
+              color: FlutterFlowTheme.of(context).error.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Icon(
+              Icons.delete_outline_rounded,
+              color: FlutterFlowTheme.of(context).error,
+            ),
+          ),
+          child: _buildLectureCard(entry),
+        );
+      },
     );
   }
 
@@ -493,49 +808,7 @@ class _HomeWidgetState extends State<HomeWidget> {
       children: [
         Align(
           alignment: const AlignmentDirectional(0, 0),
-          child: InkWell(
-            splashColor: Colors.transparent,
-            focusColor: Colors.transparent,
-            hoverColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            onTap: _toggleRecording,
-            child: Material(
-              color: Colors.transparent,
-              elevation: 8.0,
-              shape: const CircleBorder(),
-              child: Container(
-                width: 120.0,
-                height: 120.0,
-                decoration: BoxDecoration(
-                  boxShadow: const [
-                    BoxShadow(
-                      blurRadius: 20.0,
-                      color: Colors.white,
-                      offset: Offset(0, 8),
-                    )
-                  ],
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF6366F1),
-                      FlutterFlowTheme.of(context).primary
-                    ],
-                    stops: const [0.8, 1.0],
-                    begin: const AlignmentDirectional(0, -1),
-                    end: const AlignmentDirectional(0, 1),
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Align(
-                  alignment: const AlignmentDirectional(0, 0),
-                  child: Icon(
-                    Icons.mic_rounded,
-                    color: FlutterFlowTheme.of(context).info,
-                    size: 48.0,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          child: _buildRecordingButton(),
         ),
         Text(
           _isRecording
@@ -553,54 +826,371 @@ class _HomeWidgetState extends State<HomeWidget> {
                 fontStyle: FlutterFlowTheme.of(context).headlineSmall.fontStyle,
               ),
         ),
-        Text(
-          _isRecording
-              ? 'Tap to stop • ${_formatDuration(_recordingDuration)}'
-              : (_isProcessing
-                  ? 'Generating transcript and notes...'
-                  : 'Tap to start recording your lecture'),
-          textAlign: TextAlign.center,
-          style: FlutterFlowTheme.of(context).bodyMedium.override(
-                font: GoogleFonts.inter(
-                  fontWeight:
-                      FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                ),
-                color: FlutterFlowTheme.of(context).secondaryText,
-                letterSpacing: 0.0,
-                fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-              ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: _isRecording
+              ? Text(
+                  'Tap to stop • ${_formatDuration(_recordingDuration)}',
+                  key: const ValueKey('recording-status'),
+                  textAlign: TextAlign.center,
+                  style: FlutterFlowTheme.of(context).bodyMedium.override(
+                        font: GoogleFonts.inter(
+                          fontWeight:
+                              FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                        ),
+                        color: FlutterFlowTheme.of(context).secondaryText,
+                        letterSpacing: 0.0,
+                        fontWeight:
+                            FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                        fontStyle:
+                            FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                      ),
+                )
+              : _isProcessing
+                  ? Column(
+                      key: const ValueKey('processing-status'),
+                      children: [
+                        Text(
+                          'Generating transcript and notes...',
+                          textAlign: TextAlign.center,
+                          style: FlutterFlowTheme.of(context)
+                              .bodyMedium
+                              .override(
+                                font: GoogleFonts.inter(
+                                  fontWeight: FlutterFlowTheme.of(context)
+                                      .bodyMedium
+                                      .fontWeight,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .bodyMedium
+                                      .fontStyle,
+                                ),
+                                color: FlutterFlowTheme.of(context)
+                                    .secondaryText,
+                                letterSpacing: 0.0,
+                              ),
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          height: 4,
+                          width: 140,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: LinearProgressIndicator(
+                              minHeight: 4,
+                              backgroundColor: FlutterFlowTheme.of(context)
+                                  .secondaryText
+                                  .withValues(alpha: 0.12),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                FlutterFlowTheme.of(context).primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      'Tap to start recording your lecture',
+                      key: const ValueKey('idle-status'),
+                      textAlign: TextAlign.center,
+                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                            font: GoogleFonts.inter(
+                              fontWeight: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontWeight,
+                              fontStyle: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontStyle,
+                            ),
+                            color: FlutterFlowTheme.of(context).secondaryText,
+                            letterSpacing: 0.0,
+                            fontWeight: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .fontWeight,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .fontStyle,
+                          ),
+                    ),
         ),
-        if (!_isRecording && !_isProcessing && _transcriptPreview.isNotEmpty)
-          Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(maxHeight: 88.0),
-            decoration: BoxDecoration(
-              color: FlutterFlowTheme.of(context).secondaryBackground,
-              borderRadius: BorderRadius.circular(12.0),
+      ].divide(const SizedBox(height: 16)),
+    );
+  }
+
+  Widget _buildQuickActionsRow() {
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            InkWell(
+              splashColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              onTap: () async {
+                unawaited(hapticSelection());
+                context.pushNamed(NotesPageWidget.routeName);
+              },
+              child: Container(
+                width: 56.0,
+                height: 56.0,
+                decoration: BoxDecoration(
+                  color: FlutterFlowTheme.of(context).secondaryBackground,
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: Align(
+                  alignment: const AlignmentDirectional(0, 0),
+                  child: Icon(
+                    Icons.folder_outlined,
+                    color: FlutterFlowTheme.of(context).primaryText,
+                    size: 28.0,
+                  ),
+                ),
+              ),
             ),
-            padding: const EdgeInsets.all(12.0),
-            child: Text(
-              _transcriptPreview,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: FlutterFlowTheme.of(context).bodySmall.override(
-                    font: GoogleFonts.inter(
-                      fontWeight:
-                          FlutterFlowTheme.of(context).bodySmall.fontWeight,
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
+              child: Text(
+                'Library',
+                textAlign: TextAlign.center,
+                style: FlutterFlowTheme.of(context).bodySmall.override(
+                      font: GoogleFonts.inter(
+                        fontWeight: FontWeight.w500,
+                        fontStyle:
+                            FlutterFlowTheme.of(context).bodySmall.fontStyle,
+                      ),
+                      letterSpacing: 0.0,
+                      fontWeight: FontWeight.w500,
                       fontStyle:
                           FlutterFlowTheme.of(context).bodySmall.fontStyle,
                     ),
-                    color: FlutterFlowTheme.of(context).secondaryText,
-                    letterSpacing: 0.0,
-                    fontWeight:
-                        FlutterFlowTheme.of(context).bodySmall.fontWeight,
-                    fontStyle: FlutterFlowTheme.of(context).bodySmall.fontStyle,
+              ),
+            ),
+          ],
+        ),
+        Column(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            InkWell(
+              splashColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              onTap: () async {
+                await hapticSelection();
+                await _openSearch();
+              },
+              child: Container(
+                width: 56.0,
+                height: 56.0,
+                decoration: BoxDecoration(
+                  color: FlutterFlowTheme.of(context).secondaryBackground,
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: Align(
+                  alignment: const AlignmentDirectional(0, 0),
+                  child: Icon(
+                    Icons.search_rounded,
+                    color: FlutterFlowTheme.of(context).primaryText,
+                    size: 28.0,
                   ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
+              child: Text(
+                'Search',
+                textAlign: TextAlign.center,
+                style: FlutterFlowTheme.of(context).bodySmall.override(
+                      font: GoogleFonts.inter(
+                        fontWeight: FontWeight.w500,
+                        fontStyle:
+                            FlutterFlowTheme.of(context).bodySmall.fontStyle,
+                      ),
+                      letterSpacing: 0.0,
+                      fontWeight: FontWeight.w500,
+                      fontStyle:
+                          FlutterFlowTheme.of(context).bodySmall.fontStyle,
+                    ),
+              ),
+            ),
+          ],
+        ),
+        Column(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            InkWell(
+              splashColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              onTap: () async {
+                unawaited(hapticSelection());
+                context.pushNamed(SettingPageWidget.routeName);
+              },
+              child: Container(
+                width: 56.0,
+                height: 56.0,
+                decoration: BoxDecoration(
+                  color: FlutterFlowTheme.of(context).secondaryBackground,
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: Align(
+                  alignment: const AlignmentDirectional(0, 0),
+                  child: Icon(
+                    Icons.settings_outlined,
+                    color: FlutterFlowTheme.of(context).primaryText,
+                    size: 28.0,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
+              child: Text(
+                'Settings',
+                textAlign: TextAlign.center,
+                style: FlutterFlowTheme.of(context).bodySmall.override(
+                      font: GoogleFonts.inter(
+                        fontWeight: FontWeight.w500,
+                        fontStyle:
+                            FlutterFlowTheme.of(context).bodySmall.fontStyle,
+                      ),
+                      letterSpacing: 0.0,
+                      fontWeight: FontWeight.w500,
+                      fontStyle:
+                          FlutterFlowTheme.of(context).bodySmall.fontStyle,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecordingButton() {
+    return SizedBox(
+      width: 168.0,
+      height: 168.0,
+      child: AnimatedBuilder(
+        animation: _recordingPulseController,
+        builder: (context, child) {
+          final pulseValue = _recordingPulseController.value;
+          final iconScale = _isRecording
+              ? (1.0 + (math.sin(pulseValue * math.pi * 2) * 0.05))
+              : 1.0;
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              if (_isRecording) ...[
+                _buildWaveRing(
+                  progress: (pulseValue + 0.0) % 1.0,
+                  color: FlutterFlowTheme.of(context).primary,
+                ),
+                _buildWaveRing(
+                  progress: (pulseValue + 0.33) % 1.0,
+                  color: FlutterFlowTheme.of(context).secondary,
+                ),
+                _buildWaveRing(
+                  progress: (pulseValue + 0.66) % 1.0,
+                  color: FlutterFlowTheme.of(context).tertiary,
+                ),
+              ],
+              Transform.scale(
+                scale: iconScale,
+                child: child,
+              ),
+            ],
+          );
+        },
+        child: InkWell(
+          splashColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          onTap: _toggleRecording,
+          child: Material(
+            color: Colors.transparent,
+            elevation: _isRecording ? 12.0 : 8.0,
+            shape: const CircleBorder(),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOut,
+              width: 120.0,
+              height: 120.0,
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: _isRecording ? 28.0 : 20.0,
+                    color: _isRecording
+                        ? FlutterFlowTheme.of(context)
+                            .primary
+                            .withValues(alpha: 0.35)
+                        : Colors.white,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+                gradient: LinearGradient(
+                  colors: _isRecording
+                      ? [
+                          FlutterFlowTheme.of(context).tertiary,
+                          FlutterFlowTheme.of(context).primary,
+                        ]
+                      : [
+                          const Color(0xFF6366F1),
+                          FlutterFlowTheme.of(context).primary,
+                        ],
+                  stops: const [0.2, 1.0],
+                  begin: const AlignmentDirectional(0, -1),
+                  end: const AlignmentDirectional(0, 1),
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Align(
+                alignment: const AlignmentDirectional(0, 0),
+                child: Icon(
+                  Icons.mic_rounded,
+                  color: FlutterFlowTheme.of(context).info,
+                  size: 48.0,
+                ),
+              ),
             ),
           ),
-      ].divide(const SizedBox(height: 16)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWaveRing({
+    required double progress,
+    required Color color,
+  }) {
+    final ringSize = 120.0 + (progress * 42.0);
+    final opacity = ((1.0 - progress) * 0.45).clamp(0.0, 0.45).toDouble();
+    return IgnorePointer(
+      child: Container(
+        width: ringSize,
+        height: ringSize,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: color.withValues(alpha: opacity),
+            width: 2.0,
+          ),
+          gradient: RadialGradient(
+            colors: [
+              color.withValues(alpha: opacity * 0.18),
+              color.withValues(alpha: 0.0),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -608,6 +1198,7 @@ class _HomeWidgetState extends State<HomeWidget> {
     if (_isProcessing) {
       return;
     }
+    await hapticLight();
     if (_isRecording) {
       await _stopRecording();
     } else {
@@ -722,6 +1313,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                     size: 24.0,
                   ),
                   onPressed: () async {
+                    unawaited(hapticSelection());
                     context.pushNamed(NotificationPageWidget.routeName);
                   },
                 ),
@@ -735,229 +1327,129 @@ class _HomeWidgetState extends State<HomeWidget> {
           top: true,
           child: Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(24, 16, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
+            child: Stack(
               children: [
-                Row(
+                Column(
                   mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Recent Lectures',
-                      style:
-                          FlutterFlowTheme.of(context).headlineMedium.override(
-                                font: GoogleFonts.interTight(
-                                  fontWeight: FontWeight.w600,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .headlineMedium
-                                      .fontStyle,
-                                ),
-                                letterSpacing: 0.0,
+                    Align(
+                      alignment: const AlignmentDirectional(-1.0, 0),
+                      child: Text(
+                        'Recent Lectures',
+                        style: FlutterFlowTheme.of(context)
+                            .headlineMedium
+                            .override(
+                              font: GoogleFonts.interTight(
                                 fontWeight: FontWeight.w600,
                                 fontStyle: FlutterFlowTheme.of(context)
                                     .headlineMedium
                                     .fontStyle,
                               ),
-                    ),
-                    InkWell(
-                      splashColor: Colors.transparent,
-                      focusColor: Colors.transparent,
-                      hoverColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onTap: () async {
-                        context.pushNamed(NotesPageWidget.routeName);
-                      },
-                      child: Text(
-                        'View all',
-                        style: FlutterFlowTheme.of(context).bodyMedium.override(
-                              font: GoogleFonts.inter(
-                                fontWeight: FontWeight.w500,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .bodyMedium
-                                    .fontStyle,
-                              ),
-                              color: FlutterFlowTheme.of(context).primary,
                               letterSpacing: 0.0,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               fontStyle: FlutterFlowTheme.of(context)
-                                  .bodyMedium
+                                  .headlineMedium
                                   .fontStyle,
                             ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                Expanded(child: _buildRecentLecturesList()),
-                _buildRecordingPanel(),
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        InkWell(
-                          splashColor: Colors.transparent,
-                          focusColor: Colors.transparent,
-                          hoverColor: Colors.transparent,
-                          highlightColor: Colors.transparent,
-                          onTap: () async {
-                            context.pushNamed(NotesPageWidget.routeName);
-                          },
-                          child: Container(
-                            width: 56.0,
-                            height: 56.0,
-                            decoration: BoxDecoration(
-                              color: FlutterFlowTheme.of(context)
-                                  .secondaryBackground,
-                              borderRadius: BorderRadius.circular(16.0),
-                            ),
-                            child: Align(
-                              alignment: const AlignmentDirectional(0, 0),
-                              child: Icon(
-                                Icons.folder_outlined,
-                                color: FlutterFlowTheme.of(context).primaryText,
-                                size: 28.0,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding:
-                              const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
-                          child: Text(
-                            'Library',
-                            textAlign: TextAlign.center,
-                            style:
-                                FlutterFlowTheme.of(context).bodySmall.override(
-                                      font: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w500,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodySmall
-                                            .fontStyle,
-                                      ),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodySmall
-                                          .fontStyle,
-                                    ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        InkWell(
-                          splashColor: Colors.transparent,
-                          focusColor: Colors.transparent,
-                          hoverColor: Colors.transparent,
-                          highlightColor: Colors.transparent,
-                          onTap: _openSearch,
-                          child: Container(
-                            width: 56.0,
-                            height: 56.0,
-                            decoration: BoxDecoration(
-                              color: FlutterFlowTheme.of(context)
-                                  .secondaryBackground,
-                              borderRadius: BorderRadius.circular(16.0),
-                            ),
-                            child: Align(
-                              alignment: const AlignmentDirectional(0, 0),
-                              child: Icon(
-                                Icons.search_rounded,
-                                color: FlutterFlowTheme.of(context).primaryText,
-                                size: 28.0,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding:
-                              const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
-                          child: Text(
-                            'Search',
-                            textAlign: TextAlign.center,
-                            style:
-                                FlutterFlowTheme.of(context).bodySmall.override(
-                                      font: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w500,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodySmall
-                                            .fontStyle,
-                                      ),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodySmall
-                                          .fontStyle,
-                                    ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        InkWell(
-                          splashColor: Colors.transparent,
-                          focusColor: Colors.transparent,
-                          hoverColor: Colors.transparent,
-                          highlightColor: Colors.transparent,
-                          onTap: () async {
-                            context.pushNamed(SettingPageWidget.routeName);
-                          },
-                          child: Container(
-                            width: 56.0,
-                            height: 56.0,
-                            decoration: BoxDecoration(
-                              color: FlutterFlowTheme.of(context)
-                                  .secondaryBackground,
-                              borderRadius: BorderRadius.circular(16.0),
-                            ),
-                            child: Align(
-                              alignment: const AlignmentDirectional(0, 0),
-                              child: Icon(
-                                Icons.settings_outlined,
-                                color: FlutterFlowTheme.of(context).primaryText,
-                                size: 28.0,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding:
-                              const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
-                          child: Text(
-                            'Settings',
-                            textAlign: TextAlign.center,
-                            style:
-                                FlutterFlowTheme.of(context).bodySmall.override(
-                                      font: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w500,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodySmall
-                                            .fontStyle,
-                                      ),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodySmall
-                                          .fontStyle,
-                                    ),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 16.0),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _loadRecordings,
+                        child: _buildRecentLecturesList(bottomPadding: 360.0),
+                      ),
                     ),
                   ],
                 ),
-              ].divide(const SizedBox(height: 32)),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    padding: const EdgeInsets.only(top: 24.0),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          FlutterFlowTheme.of(context)
+                              .primaryBackground
+                              .withValues(alpha: 0.0),
+                          FlutterFlowTheme.of(context)
+                              .primaryBackground
+                              .withValues(alpha: 0.9),
+                          FlutterFlowTheme.of(context).primaryBackground,
+                        ],
+                        stops: const [0.0, 0.25, 1.0],
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildRecordingPanel(),
+                        const SizedBox(height: 20.0),
+                        _buildQuickActionsRow(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RecordingNameDialog extends StatefulWidget {
+  const _RecordingNameDialog({
+    required this.defaultTitle,
+  });
+
+  final String defaultTitle;
+
+  @override
+  State<_RecordingNameDialog> createState() => _RecordingNameDialogState();
+}
+
+class _RecordingNameDialogState extends State<_RecordingNameDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.defaultTitle);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Name this recording'),
+      content: TextField(
+        controller: _controller,
+        maxLength: 80,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: 'e.g. Physics Lecture 4',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context, rootNavigator: true).pop(''),
+          child: const Text('Use default'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context, rootNavigator: true)
+              .pop(_controller.text.trim()),
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }

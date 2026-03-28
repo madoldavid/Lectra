@@ -31,20 +31,25 @@ class LocalPcmRecordingService {
     }
     _maxAmplitudeDb = -160.0;
 
-    // Use legacy MediaRecorder path for stability on emulators/devices.
+    // Lecture capture profile:
+    // - Force 16kHz mono PCM WAV to match local Whisper expectations.
+    // - Keep lightweight processing to reduce crashes on stop/transcribe.
     await _audioRecorder.start(
       const RecordConfig(
-        encoder: AudioEncoder.aacLc,
-        sampleRate: 44100,
+        encoder: AudioEncoder.wav,
+        sampleRate: 16000,
         numChannels: 1,
-        bitRate: 128000,
-        autoGain: false,
+        autoGain: true,
         echoCancel: false,
         noiseSuppress: false,
         androidConfig: AndroidRecordConfig(
           useLegacy: true,
+          service: AndroidService(
+            title: 'Lectra is recording',
+            content: 'Recording lecture in background',
+          ),
           audioSource: AndroidAudioSource.mic,
-          manageBluetooth: false,
+          manageBluetooth: true,
         ),
       ),
       path: wavOutputPath,

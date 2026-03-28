@@ -10,6 +10,16 @@
 -dontwarn org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider
 -keep class org.xmlpull.v1.** { *; }
 
+# FFmpegKit classes are called from JNI; obfuscation breaks native
+# registration in release builds.
+-keep class com.antonkarpenko.ffmpegkit.** { *; }
+-dontwarn com.antonkarpenko.ffmpegkit.**
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes InnerClasses
 
 
 

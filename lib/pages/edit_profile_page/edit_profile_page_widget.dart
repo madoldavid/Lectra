@@ -4,8 +4,8 @@ import 'dart:io';
 import '/auth/supabase_auth/auth_util.dart';
 import '/backend/supabase/supabase.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
-import 'package:go_router/go_router.dart';
 
 class EditProfilePageWidget extends StatefulWidget {
   const EditProfilePageWidget({super.key});
@@ -102,7 +102,7 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully.')),
       );
-      context.pop();
+      context.safePop();
     }
   }
 
@@ -119,8 +119,26 @@ class _EditProfilePageWidgetState extends State<EditProfilePageWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: FlutterFlowTheme.of(context).primaryText,
+            size: 24,
+          ),
+          onPressed: context.safePop,
+        ),
+        title: Text(
+          'Edit Profile',
+          style: FlutterFlowTheme.of(context).headlineMedium.override(
+                color: FlutterFlowTheme.of(context).primaryText,
+                letterSpacing: 0.0,
+              ),
+        ),
+        elevation: 0,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
