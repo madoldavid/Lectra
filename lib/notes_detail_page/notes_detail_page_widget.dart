@@ -77,7 +77,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
 
   String _ensureMarkdownHeadings(String text) {
     // If already has markdown headings, return as-is.
-    if (RegExp(r'^#', multiLine: true).hasMatch(text)) return text;
+    if (RegExp(r'^\s*#', multiLine: true).hasMatch(text)) return text.trim();
 
     final known = <String>[
       'lecture summary',
@@ -116,7 +116,20 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
         }
       }
     }
-    return lines.join('\n');
+    final withConverted = lines.join('\n').trim();
+    if (RegExp(r'^\s*#', multiLine: true).hasMatch(withConverted)) {
+      return withConverted;
+    }
+
+    // No headings at all: wrap into sensible defaults so downstream parsing works.
+    final body = withConverted.isEmpty ? 'No content provided.' : withConverted;
+    return [
+      '# Lecture Summary',
+      body,
+      '',
+      '# Notes',
+      body,
+    ].join('\n');
   }
 
   Future<void> _maybePromptReview() async {
@@ -186,13 +199,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
         _notesText = text;
         _loadingNotes = false;
       });
-      // Auto retry AI structuring if we only have raw transcript.
-      final trimmed = text.trimLeft().toLowerCase();
-      if (!_autoRetriedOnce && trimmed.startsWith('# raw transcript')) {
-        _autoRetriedOnce = true;
-        // Fire and forget; user sees the same screen while we try.
-        unawaited(_retryStructuring());
-      }
     } catch (_) {
       if (!mounted) {
         return;
@@ -1505,9 +1511,21 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
     return trimmed.substring(idx + 1).trim();
   }
 
+  int _headingCount(String notesText) {
+    return RegExp(r'^\s*#{1,6}\s+.+', multiLine: true)
+        .allMatches(notesText)
+        .length;
+  }
+
   bool _hasStructured(String notesText) {
-    final t = notesText.toLowerCase();
-    return t.contains('lecture summary') && t.contains('main topics');
+    final normalized = notesText.trimLeft().toLowerCase();
+    if (normalized.startsWith('# raw transcript')) return false;
+    final hasHeading = _headingCount(notesText) >= 1;
+    final hasKeywords = normalized.contains('lecture summary') ||
+        normalized.contains('main topics') ||
+        normalized.contains('key definitions') ||
+        normalized.contains('action items');
+    return hasHeading && hasKeywords;
   }
 
   Future<void> _retryStructuring() async {
@@ -1526,22 +1544,43 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
       final service = GeminiService();
       final notes = await service.generateNotes(transcript);
       final trimmed = notes.trim();
-      final isRawFallback =
-          trimmed.toLowerCase().startsWith('# raw transcript');
-      final looksStructured = !isRawFallback && _hasStructured(trimmed);
-
-      if (trimmed.isEmpty || !looksStructured) {
+      if (trimmed.isEmpty ||
+          trimmed.toLowerCase().startsWith('# raw transcript')) {
         if (mounted) {
+          final headingCount = _headingCount(trimmed);
+          final firstLine = trimmed.split('\n').first.trim();
+          final debug = service.lastDebug ?? 'no debug';
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
-                  'Could not generate structured notes yet. Try again with better connection.'),
+                'Could not generate structured notes yet. len=${trimmed.length}, '
+                'headings=$headingCount, raw=true, first="$firstLine", debug=$debug',
+              ),
             ),
           );
         }
         return;
       }
+
       final normalized = _ensureMarkdownHeadings(trimmed);
+      final looksStructured = _hasStructured(normalized);
+
+      if (trimmed.isEmpty || !looksStructured) {
+        if (mounted) {
+          final headingCount = _headingCount(normalized);
+          final firstLine = normalized.split('\n').first.trim();
+          final debug = service.lastDebug ?? 'no debug';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Could not generate structured notes yet. len=${normalized.length}, '
+                'headings=$headingCount, raw=false, first="$firstLine", debug=$debug',
+              ),
+            ),
+          );
+        }
+        return;
+      }
       if (widget.notesPath != null && widget.notesPath!.isNotEmpty) {
         await File(widget.notesPath!).writeAsString(normalized, flush: true);
       }

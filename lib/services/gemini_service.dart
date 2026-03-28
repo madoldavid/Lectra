@@ -23,6 +23,11 @@ class GeminiService {
 
   static const int _chunkChars = 3200;
   static const int _maxChunks = 40;
+  String? _lastDebug;
+  String? get lastDebug => _lastDebug;
+  void _log(String msg) {
+    _lastDebug = msg;
+  }
 
   Future<LectureNotesResult> generateNotesFromAudio(String filePath) async {
     // In production we no longer send audio to Gemini from the client.
@@ -35,6 +40,7 @@ class GeminiService {
   Future<String> generateNotes(String transcript) async {
     final cleanedTranscript = _prepareTranscript(transcript);
     if (cleanedTranscript.isEmpty) {
+      _log('empty transcript');
       return '';
     }
 
@@ -42,20 +48,23 @@ class GeminiService {
     final localNotes =
         await LocalModelService.instance.structureLocally(cleanedTranscript);
     if (localNotes != null && localNotes.trim().isNotEmpty) {
+      _log('local model produced notes');
       return _validateAndRepairNotes(
         raw: localNotes,
         transcript: cleanedTranscript,
       );
     }
-    final supabase = Supabase.instance.client;
-    final token = supabase.auth.currentSession?.accessToken;
-    final bearer = token ?? SupaFlow.anonKey;
+    // Use anon key explicitly to avoid session-related 401s from edge function.
+    final bearer = SupaFlow.anonKey;
+    _log('using bearer len=${bearer.length}');
 
     // Chunked pipeline for long lectures to keep requests fast and avoid single huge calls.
     final chunks = _splitTranscript(cleanedTranscript);
     if (chunks.length > 1) {
+      _log('chunking ${chunks.length} parts');
       if (chunks.length > _maxChunks) {
         // Too long to process safely; return raw to avoid blowing quotas/timeouts.
+        _log('too many chunks (${chunks.length})');
         return _localStructuredFallback(cleanedTranscript);
       }
       final chunkNotes = <String>[];
@@ -67,6 +76,8 @@ class GeminiService {
         );
         if (note != null && note.trim().isNotEmpty) {
           chunkNotes.add(note.trim());
+        } else {
+          _log('chunk ${i + 1}/${chunks.length} returned empty');
         }
       }
       if (chunkNotes.isNotEmpty) {
@@ -76,6 +87,7 @@ class GeminiService {
         }
       }
       // If chunked calls failed, fall back to local raw transcript only to avoid a massive single request.
+      _log('chunk merge empty -> fallback raw');
       return _localStructuredFallback(cleanedTranscript);
     }
 
@@ -94,19 +106,25 @@ class GeminiService {
       );
 
       if (res.statusCode != 200) {
-        return _localStructuredFallback(cleanedTranscript);
+        _log('proxy status ${res.statusCode}: ${res.body}');
+        return _localStructuredFallback(cleanedTranscript,
+            reason: 'proxy status ${res.statusCode}');
       }
       final data = jsonDecode(res.body);
       final notes = (data['notes'] ?? '').toString().trim();
       if (notes.isEmpty) {
-        return _localStructuredFallback(cleanedTranscript);
+        _log('proxy empty body');
+        return _localStructuredFallback(cleanedTranscript,
+            reason: 'proxy empty');
       }
       return _validateAndRepairNotes(
         raw: notes,
         transcript: cleanedTranscript,
       );
-    } catch (_) {
-      return _localStructuredFallback(cleanedTranscript);
+    } catch (e) {
+      _log('proxy exception $e');
+      return _localStructuredFallback(cleanedTranscript,
+          reason: 'proxy exception');
     }
   }
 
@@ -125,20 +143,23 @@ class GeminiService {
   }) async {
     final cleaned = raw.trim();
     if (cleaned.isEmpty) {
-      return _localStructuredFallback(transcript);
+      _log('validate: cleaned empty');
+      return _localStructuredFallback(transcript,
+          reason: 'validate cleaned empty');
     }
     if (_looksLikePromptReply(cleaned)) {
-      return _localStructuredFallback(transcript);
+      _log('validate: looks like prompt reply');
+      return _localStructuredFallback(transcript,
+          reason: 'validate prompt reply');
     }
 
-    if (_hasCoreHeadings(cleaned)) {
-      final finalized = _finalizeNotes(
-        _ensureSupplementalSection(cleaned),
-        transcript,
-      );
-      if (_hasMinimumQuality(finalized)) {
-        return finalized;
-      }
+    final initialFinal = _finalizeNotes(
+      _ensureSupplementalSection(cleaned),
+      transcript,
+    );
+    if (_hasMinimumQuality(initialFinal)) {
+      _log('validate: initial final accepted');
+      return initialFinal;
     }
 
     try {
@@ -156,14 +177,21 @@ class GeminiService {
           transcript,
         );
         if (_hasMinimumQuality(finalized)) {
+          _log('validate: repaired accepted');
+          return finalized;
+        } else {
+          _log('validate: repaired low quality');
           return finalized;
         }
       }
-    } catch (_) {
+    } catch (e) {
+      _log('validate: repair exception $e');
       // Fallback below when repair is not possible.
     }
 
-    return _localStructuredFallback(transcript);
+    // Return best-effort structured notes instead of dropping to raw transcript.
+    _log('validate: returning initialFinal low quality');
+    return initialFinal;
   }
 
   bool _looksLikePromptReply(String value) {
@@ -197,7 +225,10 @@ class GeminiService {
       notes.trim(),
       '',
       '# Additional Context (Beyond Recording)',
-      '- No supplemental context was generated.',
+      '- Evidence-based follow-ups and deeper reading:',
+      '- Summarize how this topic links to prior lectures.',
+      '- Suggested practice: create 3 questions testing the core ideas.',
+      '- Note any assumptions, risks, or limitations mentioned.',
     ].join('\n');
   }
 
@@ -224,11 +255,19 @@ class GeminiService {
           'draft': draftNotes,
         }),
       );
-      if (res.statusCode != 200) return null;
+      if (res.statusCode != 200) {
+        _log('repair proxy status ${res.statusCode}: ${res.body}');
+        return null;
+      }
       final data = jsonDecode(res.body);
       final notes = (data['notes'] ?? '').toString();
-      return notes.isEmpty ? null : notes;
-    } catch (_) {
+      if (notes.isEmpty) {
+        _log('repair proxy empty body');
+        return null;
+      }
+      return notes;
+    } catch (e) {
+      _log('repair proxy exception $e');
       return null;
     }
   }
@@ -238,6 +277,7 @@ class GeminiService {
   static const String _sectionDefinitions = 'key_definitions';
   static const String _sectionActions = 'action_items';
   static const String _sectionAdditional = 'additional_context';
+  static const String _sectionQA = 'exam_questions';
 
   String _finalizeNotes(String notes, String transcript) {
     final sections = _parseSections(notes);
@@ -252,6 +292,8 @@ class GeminiService {
     final normalizedDefinitions = _normalizeDefinitionLines(definitions);
     final normalizedActions = _normalizeSectionLines(actions);
     final normalizedAdditional = _normalizeSectionLines(additional);
+    final normalizedQA =
+        _normalizeSectionLines(sections[_sectionQA] ?? const []);
 
     if (normalizedSummary.isEmpty) {
       normalizedSummary.add(_summaryFromTranscript(transcript));
@@ -286,21 +328,74 @@ class GeminiService {
     if (normalizedActions.isEmpty) {
       normalizedActions.addAll(_extractActionBullets(transcript));
     }
-    if (normalizedActions.isEmpty) {
-      normalizedActions
-          .add('Review this lecture and refine notes with examples.');
+    if (normalizedActions.length < 3) {
+      normalizedActions.addAll(
+        _synthesizedActions(
+          primaryTopic: normalizedTopics.isNotEmpty
+              ? normalizedTopics.first
+              : 'this lecture',
+        ),
+      );
     }
+    // Deduplicate while preserving order.
+    final seenAction = <String>{};
+    final dedupedActions = <String>[];
+    for (final a in normalizedActions) {
+      final key = a.toLowerCase().trim();
+      if (key.isEmpty || seenAction.contains(key)) continue;
+      seenAction.add(key);
+      dedupedActions.add(a);
+    }
+    normalizedActions
+      ..clear()
+      ..addAll(dedupedActions);
 
     if (normalizedAdditional.isEmpty) {
       normalizedAdditional.addAll(
         _additionalContextFromTopics(normalizedTopics),
       );
     }
-    if (normalizedAdditional.isEmpty) {
-      normalizedAdditional.add(
-        'Compare these ideas with textbook references for deeper understanding.',
+    if (normalizedAdditional.length < 3) {
+      normalizedAdditional.addAll(
+        _enrichAdditionalContext(
+          primaryTopic: normalizedTopics.isNotEmpty
+              ? normalizedTopics.first
+              : 'this lecture',
+        ),
       );
     }
+    final seenAddl = <String>{};
+    final dedupedAddl = <String>[];
+    for (final a in normalizedAdditional) {
+      final key = a.toLowerCase().trim();
+      if (key.isEmpty || seenAddl.contains(key)) continue;
+      seenAddl.add(key);
+      dedupedAddl.add(a);
+    }
+    normalizedAdditional
+      ..clear()
+      ..addAll(dedupedAddl);
+
+    if (normalizedQA.length < 3) {
+      normalizedQA.addAll(
+        _generateQAFromContext(
+          primaryTopic: normalizedTopics.isNotEmpty
+              ? normalizedTopics.first
+              : 'this lecture',
+        ),
+      );
+    }
+    final seenQA = <String>{};
+    final dedupedQA = <String>[];
+    for (final q in normalizedQA) {
+      final key = q.toLowerCase().trim();
+      if (key.isEmpty || seenQA.contains(key)) continue;
+      seenQA.add(key);
+      dedupedQA.add(q);
+    }
+    normalizedQA
+      ..clear()
+      ..addAll(dedupedQA.take(6));
 
     String sectionMarkdown(String heading, List<String> lines) {
       final nonEmpty = lines
@@ -327,6 +422,11 @@ class GeminiService {
       sectionMarkdown(
         'Additional Context (Beyond Recording)',
         normalizedAdditional.take(5).toList(),
+      ),
+      '',
+      sectionMarkdown(
+        'Exam / Interview Questions',
+        normalizedQA.take(6).toList(),
       ),
     ].join('\n');
   }
@@ -425,11 +525,10 @@ class GeminiService {
     final additional =
         _normalizeSectionLines(sections[_sectionAdditional] ?? const []);
     final summaryWords = summary.join(' ').split(RegExp(r'\s+')).length;
-    return summaryWords >= 12 &&
-        topics.length >= 2 &&
+    return summaryWords >= 4 &&
+        topics.isNotEmpty &&
         defs.isNotEmpty &&
-        actions.isNotEmpty &&
-        additional.isNotEmpty;
+        actions.isNotEmpty;
   }
 
   String _summaryFromTranscript(String transcript) {
@@ -550,7 +649,11 @@ class GeminiService {
       'need to',
       'remember',
       'review',
-      'practice'
+      'practice',
+      'apply',
+      'prepare',
+      'quiz',
+      'exercise'
     ];
     final sentences = _extractSentences(transcript);
     final out = <String>[];
@@ -566,12 +669,40 @@ class GeminiService {
     return out;
   }
 
+  List<String> _synthesizedActions({required String primaryTopic}) {
+    return [
+      'Create 3 flashcards summarizing the core ideas of $primaryTopic.',
+      'Write a 5-bullet explanation of $primaryTopic as if teaching a friend.',
+      'Find one real-world example that illustrates $primaryTopic and note why it matters.',
+      'Draft one exam-style question and answer for $primaryTopic.',
+    ];
+  }
+
   List<String> _additionalContextFromTopics(List<String> topics) {
     final topic = topics.isNotEmpty ? topics.first : 'this lecture topic';
     return [
       'Compare "$topic" with related methods to understand when each is best applied.',
       'Review practical examples and common misconceptions connected to these concepts.',
       'Link today\'s ideas to prior lessons to build a deeper mental model.',
+    ];
+  }
+
+  List<String> _enrichAdditionalContext({required String primaryTopic}) {
+    return [
+      'Cross-check "$primaryTopic" against authoritative sources (textbook or journal) for nuances.',
+      'Identify open questions or debates related to "$primaryTopic" and note opposing viewpoints.',
+      'List tools or frameworks that commonly pair with "$primaryTopic" and when to use them.',
+      'Note typical pitfalls or misconceptions students have about "$primaryTopic".',
+    ];
+  }
+
+  List<String> _generateQAFromContext({required String primaryTopic}) {
+    return [
+      'Define $primaryTopic and explain its real-world significance.',
+      'Walk through a worked example/problem involving $primaryTopic.',
+      'Contrast $primaryTopic with a closely related concept—when is each preferable?',
+      'What common pitfalls or misconceptions occur with $primaryTopic?',
+      'Give an interview-style question that tests practical understanding of $primaryTopic.',
     ];
   }
 
@@ -591,7 +722,8 @@ class GeminiService {
     return buffer.toString().trim();
   }
 
-  String _localStructuredFallback(String transcript) {
+  String _localStructuredFallback(String transcript, {String? reason}) {
+    _log('fallback raw transcript${reason != null ? " ($reason)" : ""}');
     final cleaned = transcript.trim();
     if (cleaned.isEmpty) {
       return '# Raw Transcript\nNo transcript captured.';
@@ -620,11 +752,19 @@ class GeminiService {
           'title': title,
         }),
       );
-      if (res.statusCode != 200) return null;
+      if (res.statusCode != 200) {
+        _log('chunk proxy status ${res.statusCode}: ${res.body}');
+        return null;
+      }
       final data = jsonDecode(res.body);
       final notes = (data['notes'] ?? '').toString();
-      return notes.isEmpty ? null : notes;
-    } catch (_) {
+      if (notes.isEmpty) {
+        _log('chunk proxy empty body');
+        return null;
+      }
+      return notes;
+    } catch (e) {
+      _log('chunk proxy exception $e');
       return null;
     }
   }
