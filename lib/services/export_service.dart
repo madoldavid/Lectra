@@ -61,7 +61,7 @@ class ExportService {
         entry.title.replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_').trim();
     final filename = safeTitle.isEmpty
         ? 'lecture_${DateTime.now().millisecondsSinceEpoch}.pdf'
-        : '${safeTitle}.pdf';
+        : '$safeTitle.pdf';
     final outPath = p.join(exportDir.path, filename);
     final file = File(outPath);
     await file.writeAsBytes(await doc.save());
@@ -101,7 +101,7 @@ class ExportService {
       ArchiveFile('word/document.xml', docXml.length, docXml.codeUnits),
     );
 
-    final bytes = ZipEncoder().encode(archive);
+    final bytes = ZipEncoder().encode(archive) ?? <int>[];
 
     final dir = await getApplicationDocumentsDirectory();
     final exportDir = Directory(p.join(dir.path, 'exports'));
@@ -112,10 +112,10 @@ class ExportService {
         entry.title.replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_').trim();
     final filename = safeTitle.isEmpty
         ? 'lecture_${DateTime.now().millisecondsSinceEpoch}.docx'
-        : '${safeTitle}.docx';
+        : '$safeTitle.docx';
     final outPath = p.join(exportDir.path, filename);
     final file = File(outPath);
-    await file.writeAsBytes(bytes!, flush: true);
+    await file.writeAsBytes(bytes, flush: true);
     return file;
   }
 

@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../env.dart';
 import '../backend/supabase/supabase.dart';
 import 'local_model_service.dart';
@@ -522,8 +521,6 @@ class GeminiService {
         _normalizeDefinitionLines(sections[_sectionDefinitions] ?? const []);
     final actions =
         _normalizeSectionLines(sections[_sectionActions] ?? const []);
-    final additional =
-        _normalizeSectionLines(sections[_sectionAdditional] ?? const []);
     final summaryWords = summary.join(' ').split(RegExp(r'\s+')).length;
     return summaryWords >= 4 &&
         topics.isNotEmpty &&

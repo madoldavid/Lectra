@@ -72,7 +72,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
   bool _isPlayPauseBusy = false;
   bool _isExporting = false;
   bool _isRetryingNotes = false;
-  bool _autoRetriedOnce = false;
   bool _reviewPrompted = false;
 
   String _ensureMarkdownHeadings(String text) {
