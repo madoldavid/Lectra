@@ -1180,6 +1180,11 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Prepare flashcards outside of the widget tree build to avoid setState during build.
+    // Safe because _notesText is already loaded before this build is called.
+    final sectionsForFlashcards = _parseSections(_notesText);
+    _refreshFlashcards(sectionsForFlashcards);
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
