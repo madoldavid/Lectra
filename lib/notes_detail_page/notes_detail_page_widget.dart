@@ -82,7 +82,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
   bool _reviewPrompted = false;
   List<_Flashcard> _flashcards = const [];
 
-  void _buildFlashcards(List<_NoteSection> sections) {
+  List<_Flashcard> _buildFlashcards(List<_NoteSection> sections) {
     final cards = <_Flashcard>[];
 
     for (final section in sections) {
@@ -96,14 +96,11 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
         if (defMatch != null) {
           final term = defMatch.group(1)!.trim();
           final def = defMatch.group(2)!.trim();
-          cards.add(_Flashcard(
-            question: 'What is $term?',
-            answer: def,
-          ));
+          cards.add(_Flashcard(question: 'What is $term?', answer: def));
           continue;
         }
 
-        // Topics -> “Explain …” cards
+        // Topics -> “Explain …” cards.
         if (titleLower.contains('topic') || titleLower.contains('summary')) {
           cards.add(_Flashcard(
             question: 'Explain: ${_cleanInlineMarkdown(cleaned)}',
@@ -111,10 +108,11 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
           ));
         }
 
-        // Action items -> scenario questions
+        // Action items -> scenario questions.
         if (titleLower.contains('action')) {
           cards.add(_Flashcard(
-            question: 'How would you execute: ${_cleanInlineMarkdown(cleaned)}?',
+            question:
+                'How would you execute: ${_cleanInlineMarkdown(cleaned)}?',
             answer: 'Describe the steps and rationale.',
           ));
         }
@@ -131,8 +129,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
       deduped.add(c);
       if (deduped.length >= 12) break;
     }
-
-    setState(() => _flashcards = deduped);
+    return deduped;
   }
 
   Widget _buildFlashcardsSection() {
@@ -1181,6 +1178,8 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Prepare flashcards outside of the widget tree build to avoid setState during build.
+    // Safe because _notesText is already loaded before this build is called.
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -1666,7 +1665,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                         ),
                                   );
                                 }
-                                
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
