@@ -1644,7 +1644,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                 }
 
                                 final sections = _parseSections(_notesText);
-                                _refreshFlashcards(sections);
                                 if (sections.isEmpty) {
                                   return Text(
                                     'No notes were generated for this recording.',
@@ -1666,6 +1665,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                         ),
                                   );
                                 }
+                                _refreshFlashcards(sections);
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
