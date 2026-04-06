@@ -82,7 +82,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
   bool _reviewPrompted = false;
   List<_Flashcard> _flashcards = const [];
 
-  void _refreshFlashcards(List<_NoteSection> sections) {
+  void _buildFlashcards(List<_NoteSection> sections) {
     final cards = <_Flashcard>[];
 
     for (final section in sections) {
@@ -369,6 +369,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
       }
       setState(() {
         _notesText = text;
+        _flashcards = _buildFlashcards(_parseSections(_notesText));
         _loadingNotes = false;
       });
     } catch (_) {
@@ -1180,11 +1181,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Prepare flashcards outside of the widget tree build to avoid setState during build.
-    // Safe because _notesText is already loaded before this build is called.
-    final sectionsForFlashcards = _parseSections(_notesText);
-    _refreshFlashcards(sectionsForFlashcards);
-
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -1670,7 +1666,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                         ),
                                   );
                                 }
-                                _refreshFlashcards(sections);
+                                
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1794,6 +1790,7 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
       if (mounted) {
         setState(() {
           _notesText = normalized;
+          _flashcards = _buildFlashcards(_parseSections(_notesText));
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('AI notes generated.')),
