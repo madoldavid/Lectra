@@ -48,12 +48,6 @@ class _NoteSection {
   final List<String> bodyLines;
 }
 
-class _Flashcard {
-  const _Flashcard({required this.question, required this.answer});
-  final String question;
-  final String answer;
-}
-
 class _SectionVisualTheme {
   const _SectionVisualTheme({
     required this.icon,
@@ -80,169 +74,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
   bool _isExporting = false;
   bool _isRetryingNotes = false;
   bool _reviewPrompted = false;
-  List<_Flashcard> _flashcards = const [];
-
-  List<_Flashcard> _buildFlashcards(List<_NoteSection> sections) {
-    final cards = <_Flashcard>[];
-
-    for (final section in sections) {
-      final titleLower = section.title.toLowerCase();
-      for (final line in section.bodyLines) {
-        final cleaned = line.trim();
-        if (cleaned.isEmpty) continue;
-
-        // Definitions become Q/A directly.
-        final defMatch = RegExp(r'^([^:]{2,60}):\\s+(.+)$').firstMatch(cleaned);
-        if (defMatch != null) {
-          final term = defMatch.group(1)!.trim();
-          final def = defMatch.group(2)!.trim();
-          cards.add(_Flashcard(question: 'What is $term?', answer: def));
-          continue;
-        }
-
-        // Topics -> “Explain …” cards.
-        if (titleLower.contains('topic') || titleLower.contains('summary')) {
-          cards.add(_Flashcard(
-            question: 'Explain: ${_cleanInlineMarkdown(cleaned)}',
-            answer: section.title,
-          ));
-        }
-
-        // Action items -> scenario questions.
-        if (titleLower.contains('action')) {
-          cards.add(_Flashcard(
-            question:
-                'How would you execute: ${_cleanInlineMarkdown(cleaned)}?',
-            answer: 'Describe the steps and rationale.',
-          ));
-        }
-      }
-    }
-
-    // Deduplicate and cap.
-    final seen = <String>{};
-    final deduped = <_Flashcard>[];
-    for (final c in cards) {
-      final key = '${c.question.toLowerCase()}|${c.answer.toLowerCase()}';
-      if (seen.contains(key)) continue;
-      seen.add(key);
-      deduped.add(c);
-      if (deduped.length >= 12) break;
-    }
-    return deduped;
-  }
-
-  Widget _buildFlashcardsSection() {
-    final subtleBorder =
-        FlutterFlowTheme.of(context).secondaryText.withValues(alpha: 0.12);
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: FlutterFlowTheme.of(context).secondaryBackground,
-        borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: subtleBorder, width: 1.0),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: FlutterFlowTheme.of(context)
-                        .secondaryBackground
-                        .withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(10.0),
-                    border: Border.all(color: subtleBorder, width: 1.0),
-                  ),
-                  child: Icon(
-                    Icons.quiz_outlined,
-                    color: FlutterFlowTheme.of(context).primary,
-                    size: 18.0,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Flashcards (Active Recall)',
-                  style: FlutterFlowTheme.of(context).titleMedium.override(
-                        font: GoogleFonts.interTight(
-                          fontWeight: FontWeight.w700,
-                          fontStyle: FlutterFlowTheme.of(context)
-                              .titleMedium
-                              .fontStyle,
-                        ),
-                        letterSpacing: 0.0,
-                      ),
-                ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: _flashcards.isEmpty ? null : _exportFlashcardsCsv,
-                  icon: const Icon(Icons.file_download_outlined, size: 18),
-                  label: const Text('Export CSV'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ..._flashcards
-                .map(
-                  (c) => Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: FlutterFlowTheme.of(context)
-                          .secondaryBackground
-                          .withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: subtleBorder, width: 1.0),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          c.question,
-                          style: FlutterFlowTheme.of(context).bodyLarge.override(
-                                font: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w700,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .bodyLarge
-                                      .fontStyle,
-                                ),
-                                letterSpacing: 0.0,
-                              ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          c.answer,
-                          style:
-                              FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    color:
-                                        FlutterFlowTheme.of(context).secondaryText,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-          ],
-        ),
-      ),
-    );
-  }
 
   String _ensureMarkdownHeadings(String text) {
     // If already has markdown headings, return as-is.
@@ -366,7 +197,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
       }
       setState(() {
         _notesText = text;
-        _flashcards = _buildFlashcards(_parseSections(_notesText));
         _loadingNotes = false;
       });
     } catch (_) {
@@ -566,31 +396,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
       }
     }
     return merged.values.toList();
-  }
-
-  Future<void> _exportFlashcardsCsv() async {
-    if (_flashcards.isEmpty) return;
-    try {
-      final buffer = StringBuffer('Question,Answer\n');
-      for (final c in _flashcards) {
-        // Naive CSV escaping
-        String esc(String v) => '"' + v.replaceAll('"', '""') + '"';
-        buffer.writeln('${esc(c.question)},${esc(c.answer)}');
-      }
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/flashcards_${DateTime.now().millisecondsSinceEpoch}.csv');
-      await file.writeAsString(buffer.toString(), flush: true);
-      await Share.shareXFiles([
-        XFile(file.path,
-            mimeType: 'text/csv',
-            name: 'flashcards.csv'),
-      ], subject: 'Lecture flashcards');
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Export failed: $e')));
-      }
-    }
   }
 
   _SectionVisualTheme _sectionTheme(String title, int index) {
@@ -1670,10 +1475,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
                                   children: [
                                     _buildNotesSummary(sections),
                                     const SizedBox(height: 12.0),
-                                    if (_flashcards.isNotEmpty) ...[
-                                      _buildFlashcardsSection(),
-                                      const SizedBox(height: 12.0),
-                                    ],
                                     ...sections
                                         .asMap()
                                         .entries
@@ -1788,7 +1589,6 @@ class _NotesDetailPageWidgetState extends State<NotesDetailPageWidget> {
       if (mounted) {
         setState(() {
           _notesText = normalized;
-          _flashcards = _buildFlashcards(_parseSections(_notesText));
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('AI notes generated.')),
