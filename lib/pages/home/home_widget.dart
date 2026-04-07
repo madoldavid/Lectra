@@ -239,10 +239,13 @@ class _HomeWidgetState extends State<HomeWidget>
         titleOverride: titleOverride,
       );
 
-      if (!mounted) {
-        return;
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _loadRecordings();
+          }
+        });
       }
-      await _loadRecordings();
       if (!mounted) {
         return;
       }
@@ -457,7 +460,12 @@ class _HomeWidgetState extends State<HomeWidget>
     }
 
     await RecordingStore.updateRecordingTitle(entry: entry, newTitle: newTitle);
-    await _loadRecordings();
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadRecordings();
+      }
+    });
   }
 
   Future<void> _deleteRecording(RecordingEntry entry) async {

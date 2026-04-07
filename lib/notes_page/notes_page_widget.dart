@@ -160,7 +160,12 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
     }
 
     await RecordingStore.updateRecordingTitle(entry: entry, newTitle: newTitle);
-    await _loadRecordings();
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadRecordings();
+      }
+    });
   }
 
   Future<void> _shareRecording(RecordingEntry entry) async {
