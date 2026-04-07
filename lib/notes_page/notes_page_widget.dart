@@ -52,9 +52,12 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
     if (!mounted) {
       return;
     }
-    setState(() {
-      _recordings = entries;
-      _loadingRecordings = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _recordings = entries;
+        _loadingRecordings = false;
+      });
     });
   }
 
@@ -190,6 +193,8 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
 
   Future<void> _onRecordingAction(RecordingEntry entry, String action) async {
     await hapticSelection();
+    // Allow any UI (menus/sheets) to close before triggering updates.
+    await Future<void>.delayed(Duration.zero);
     switch (action) {
       case 'open':
         _openRecording(entry);

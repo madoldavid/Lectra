@@ -403,12 +403,13 @@ class _HomeWidgetState extends State<HomeWidget>
 
   Future<void> _loadRecordings() async {
     final entries = await RecordingStore.loadRecordings();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _recordings = entries;
-      _loadingRecordings = false;
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _recordings = entries;
+        _loadingRecordings = false;
+      });
     });
   }
 
@@ -553,6 +554,8 @@ class _HomeWidgetState extends State<HomeWidget>
     String action,
   ) async {
     await hapticSelection();
+    // Ensure menu route is fully dismissed before potentially triggering rebuilds.
+    await Future<void>.delayed(Duration.zero);
     switch (action) {
       case 'open':
         _openRecording(entry);
@@ -594,6 +597,7 @@ class _HomeWidgetState extends State<HomeWidget>
               title: const Text('Rename'),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
+                await Future<void>.delayed(Duration.zero);
                 await _renameRecording(entry);
               },
             ),
