@@ -3,6 +3,7 @@ import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/backend/recordings/recording_store.dart';
 import '/pages/trash_page/trash_page_widget.dart';
+import '/widgets/recording_title_editor_page.dart';
 import '/index.dart';
 import 'dart:async';
 import 'dart:io';
@@ -132,30 +133,17 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
   }
 
   Future<void> _renameRecording(RecordingEntry entry) async {
-    final controller = TextEditingController(text: entry.title);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Rename recording'),
-        content: TextField(
-          controller: controller,
-          maxLength: 80,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Enter recording name'),
+    final result = await Navigator.of(context, rootNavigator: true)
+        .push<String>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => RecordingTitleEditorPage(
+          pageTitle: 'Rename recording',
+          initialTitle: entry.title,
+          confirmLabel: 'Save',
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
-    controller.dispose();
 
     final newTitle = result?.trim() ?? '';
     if (newTitle.isEmpty || newTitle == entry.title) {
@@ -191,26 +179,6 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
     );
   }
 
-  Future<void> _onRecordingAction(RecordingEntry entry, String action) async {
-    await hapticSelection();
-    // Allow any UI (menus/sheets) to close before triggering updates.
-    await Future<void>.delayed(Duration.zero);
-    switch (action) {
-      case 'open':
-        _openRecording(entry);
-        return;
-      case 'rename':
-        await _renameRecording(entry);
-        return;
-      case 'share':
-        await _shareRecording(entry);
-        return;
-      case 'delete':
-        await _deleteRecording(entry);
-        return;
-    }
-  }
-
   Future<void> _showRecordingActionsSheet(RecordingEntry entry) async {
     await hapticSelection();
     if (!mounted) {
@@ -236,7 +204,10 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
               title: const Text('Rename'),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
-                await _renameRecording(entry);
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
+                  if (!mounted) return;
+                  await _renameRecording(entry);
+                });
               },
             ),
             ListTile(
@@ -346,31 +317,14 @@ class _NotesPageWidgetState extends State<NotesPageWidget> {
                   ],
                 ),
               ),
-              PopupMenuButton<String>(
+              IconButton(
                 icon: Icon(
                   Icons.more_vert_rounded,
                   color: FlutterFlowTheme.of(context).secondaryText,
                   size: 20.0,
                 ),
-                onSelected: (value) => _onRecordingAction(entry, value),
-                itemBuilder: (context) => const [
-                  PopupMenuItem<String>(
-                    value: 'open',
-                    child: Text('Open'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'rename',
-                    child: Text('Rename'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'share',
-                    child: Text('Share'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Text('Move to Trash'),
-                  ),
-                ],
+                splashRadius: 22.0,
+                onPressed: () => _showRecordingActionsSheet(entry),
               ),
             ].divide(const SizedBox(width: 12.0)),
           ),

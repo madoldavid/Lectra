@@ -5,6 +5,7 @@ import '/services/battery_optimization_service.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/widgets/recording_title_editor_page.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -392,11 +393,16 @@ class _HomeWidgetState extends State<HomeWidget>
       return null;
     }
     final defaultTitle = _defaultRecordingTitle();
-    final title = await showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      useRootNavigator: true,
-      builder: (_) => _RecordingNameDialog(defaultTitle: defaultTitle),
+    final title = await Navigator.of(context, rootNavigator: true).push<String>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => RecordingTitleEditorPage(
+          pageTitle: 'Name this recording',
+          initialTitle: defaultTitle,
+          confirmLabel: 'Save',
+          showUseDefault: true,
+        ),
+      ),
     );
     return title;
   }
@@ -428,32 +434,17 @@ class _HomeWidgetState extends State<HomeWidget>
   }
 
   Future<void> _renameRecording(RecordingEntry entry) async {
-    final controller = TextEditingController(text: entry.title);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Rename recording'),
-        content: TextField(
-          controller: controller,
-          maxLength: 80,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Enter recording name',
-          ),
+    final result = await Navigator.of(context, rootNavigator: true)
+        .push<String>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => RecordingTitleEditorPage(
+          pageTitle: 'Rename recording',
+          initialTitle: entry.title,
+          confirmLabel: 'Save',
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
-    controller.dispose();
 
     final newTitle = result?.trim() ?? '';
     if (newTitle.isEmpty || newTitle == entry.title) {
@@ -549,29 +540,6 @@ class _HomeWidgetState extends State<HomeWidget>
     }
   }
 
-  Future<void> _onRecordingMenuSelected(
-    RecordingEntry entry,
-    String action,
-  ) async {
-    await hapticSelection();
-    // Ensure menu route is fully dismissed before potentially triggering rebuilds.
-    await Future<void>.delayed(Duration.zero);
-    switch (action) {
-      case 'open':
-        _openRecording(entry);
-        return;
-      case 'rename':
-        await _renameRecording(entry);
-        return;
-      case 'delete':
-        await _deleteRecording(entry);
-        return;
-      case 'share':
-        await _shareRecording(entry);
-        return;
-    }
-  }
-
   Future<void> _showRecordingActionsSheet(RecordingEntry entry) async {
     await hapticSelection();
     if (!mounted) {
@@ -597,8 +565,10 @@ class _HomeWidgetState extends State<HomeWidget>
               title: const Text('Rename'),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
-                await Future<void>.delayed(Duration.zero);
-                await _renameRecording(entry);
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
+                  if (!mounted) return;
+                  await _renameRecording(entry);
+                });
               },
             ),
             ListTile(
@@ -713,31 +683,14 @@ class _HomeWidgetState extends State<HomeWidget>
                   ],
                 ),
               ),
-              PopupMenuButton<String>(
+              IconButton(
                 icon: Icon(
                   Icons.more_vert_rounded,
                   color: FlutterFlowTheme.of(context).secondaryText,
                   size: 20.0,
                 ),
-                onSelected: (value) => _onRecordingMenuSelected(entry, value),
-                itemBuilder: (context) => const [
-                  PopupMenuItem<String>(
-                    value: 'open',
-                    child: Text('Open'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'rename',
-                    child: Text('Rename'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Text('Move to Trash'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'share',
-                    child: Text('Share'),
-                  ),
-                ],
+                splashRadius: 22.0,
+                onPressed: () => _showRecordingActionsSheet(entry),
               ),
             ].divide(const SizedBox(width: 12)),
           ),
@@ -1409,59 +1362,6 @@ class _HomeWidgetState extends State<HomeWidget>
           ),
         ),
       ),
-    );
-  }
-}
-
-class _RecordingNameDialog extends StatefulWidget {
-  const _RecordingNameDialog({
-    required this.defaultTitle,
-  });
-
-  final String defaultTitle;
-
-  @override
-  State<_RecordingNameDialog> createState() => _RecordingNameDialogState();
-}
-
-class _RecordingNameDialogState extends State<_RecordingNameDialog> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.defaultTitle);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Name this recording'),
-      content: TextField(
-        controller: _controller,
-        maxLength: 80,
-        autofocus: true,
-        decoration: const InputDecoration(
-          hintText: 'e.g. Physics Lecture 4',
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context, rootNavigator: true).pop(''),
-          child: const Text('Use default'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context, rootNavigator: true)
-              .pop(_controller.text.trim()),
-          child: const Text('Save'),
-        ),
-      ],
     );
   }
 }
